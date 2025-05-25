@@ -327,15 +327,18 @@ app.post('/clear-uploads', (req, res) => {
     const files = fs.readdirSync(uploadDir);
     for (const file of files) {
       const filePath = path.join(uploadDir, file);
-      if (fs.lstatSync(filePath).isFile()) {
-        fs.unlinkSync(filePath);
-        deletedFiles.push(file);
-      }
+
+      // Skip .gitkeep and any directories
+      if (file === '.gitkeep' || !fs.lstatSync(filePath).isFile()) continue;
+
+      fs.unlinkSync(filePath);
+      deletedFiles.push(file);
     }
   }
 
   res.send(`<h2>Cleared ${deletedFiles.length} uploaded file(s):<br>${deletedFiles.join('<br>')}</h2>`);
 });
+
 
 // Start server
 app.listen(PORT, () => {

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flight Report - Upload & Preview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            padding: 2rem;
+            box-sizing: border-box;
+
+        }
+
+        h1 {
+            text-align: center;
+            color: #004080;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        label,
+        input,
+        select {
+            margin: 0;
+            padding: 0;
+        }
+
+        label {
+            margin-top: 15px;
+            margin-bottom: 5px;
+            display: block;
+            font-weight: bold;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        input[type="text"],
+        input[list],
+        select {
+            display: block;
+            /* make inputs block level */
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 1rem;
+            background-color: #fff;
+        }
+
+        .input-wrapper {
+            width: 100%;
+            display: block;
+            /* block container */
+        }
+
+        .input-wrapper input,
+        .input-wrapper datalist {
+            display: block;
+            /* force both to stack */
+            width: 100%;
+        }
+
+        .input-wrapper input {
+            margin-bottom: 0.3rem;
+            /* spacing below input */
+        }
+
+        .dropdown-list {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 1000;
+            display: none;
+            /* hidden by default */
+            margin-top: 2px;
+            font-size: 1rem;
+        }
+
+        .dropdown-list div {
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+
+        .dropdown-list div:hover {
+            background-color: #0073e6;
+            color: white;
+        }
+
+
+
+        button {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            background-color: #0073e6;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #005bb5;
+        }
+
+        ul#file-list {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 15px;
+        }
+
+        ul#file-list li {
+            background-color: #e9f0fb;
+            border-left: 4px solid #0073e6;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        ul#file-list li::before {
+            /* content: "📄"; */
+            font-size: 1.1rem;
+        }
+
+        .file-upload-btn {
+            display: inline-block;
+            padding: 10px 16px;
+            background-color: #0073e6;
+            color: white;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 10px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .file-upload-btn:hover {
+            background-color: #005bb5;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+        <div class="readout-container">
+            <h1>Readout Report Form</h1>
+            <form id="htmlForm" action="/preview" method="GET">
+
+                <!-- Work Order and Operator -->
+                <label for="workOrderNo">Work Order No:</label>
+                <input type="text" id="workOrderNo" name="workOrderNo">
+
+                <label for="operator">Operator:</label>
+                <input type="text" id="operator" name="operator">
+
+                <!-- A/C Reg input and dropdown container -->
+                <label for="acReg">A/C Reg:</label>
+                <input type="text" id="acReg" name="acReg" onfocus="showAcRegDropdown()" onblur="hideAcRegDropdown()"
+                    autocomplete="off" placeholder="Type or select A/C Reg" />
+
+                <div id="acRegDropdown" class="dropdown-list"
+                    style="display:none; position:absolute; max-height:150px; overflow-y:auto; border:1px solid #ccc; background:#fff; z-index:1000;">
+                </div>
+
+
+                <!-- Auto-filled but editable fields -->
+                <label for="typeOfAC">Type of A/C:</label>
+                <input type="text" id="typeOfAC" name="typeOfAC">
+
+                <label for="fdrPnSn">FDR P/N-S/N:</label>
+                <input type="text" id="fdrPnSn" name="fdrPnSn">
+
+                <!-- Remaining fields -->
+                <label for="dateOfDumping">Date of Dumping:</label>
+                <input type="text" id="dateOfDumping" name="dateOfDumping">
+
+                <label for="dataReceivedFrom">Data Received From:</label>
+                <input type="text" id="dataReceivedFrom" name="dataReceivedFrom">
+
+                <label for="dateOfFlight">Date of Flight:</label>
+                <input type="text" id="dateOfFlight" name="dateOfFlight">
+
+                <label for="flightSector">Flight Sector:</label>
+                <input type="text" id="flightSector" name="flightSector">
+
+                <label for="natureOfReadout">Nature of Readout:</label>
+                <input type="text" id="natureOfReadout" name="natureOfReadout">
+
+                <label for="lflRefNo">LFL Ref No:</label>
+                <input type="text" id="lflRefNo" name="lflRefNo">
+
+                <label for="noOfParametersRecorded">No of Parameters Recorded:</label>
+                <input type="text" id="noOfParametersRecorded" name="noOfParametersRecorded">
+
+                <label for="noOfParametersSubmitted">No of Parameters Submitted for Evaluation:</label>
+                <input type="text" id="noOfParametersSubmitted" name="noOfParametersSubmitted">
+
+                <button type="submit">Generate HTML Preview</button>
+            </form>
+        </div>
+        <div class="file-container">
+            <h1>Upload Multiple CSV Files</h1>
+            <form id="uploadForm" enctype="multipart/form-data">
+
+                <label for="files">Select CSV Files:</label>
+
+                <!-- Hidden actual input -->
+                <input type="file" id="files" name="files" accept=".csv" multiple hidden>
+
+                <!-- Styled button acting as a label -->
+                <label for="files" class="file-upload-btn">Choose CSV Files</label>
+
+                <!-- List of selected files -->
+                <ul id="file-list"></ul>
+
+
+                <button type="submit">Upload</button>
+                <button type="button" onclick="clearUploads()">Clear Uploaded Files</button>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Script to auto-fill based on A/C Reg -->
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const fileInput = document.getElementById('files');
+
+            if (!fileInput.files.length) {
+                alert('Please select at least one CSV file to upload.');
+                return;
+            }
+
+            const formData = new FormData(form);
+
+            try {
+                const res = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) throw new Error('Upload failed');
+
+                const responseText = await res.text();
+                alert('CSV files uploaded successfully.');
+            } catch (err) {
+                alert('Upload error: ' + err.message);
+            }
+        });
+
+        document.getElementById('htmlForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+
+            try {
+                const res = await fetch('/preview?' + params.toString(), {
+                    method: 'GET'
+                });
+
+                const contentType = res.headers.get("content-type");
+
+                if (!res.ok) {
+                    if (contentType && contentType.includes("application/json")) {
+                        const errorData = await res.json();
+                        alert(errorData.error || 'Preview failed');
+                    } else {
+                        const errorText = await res.text();
+                        alert(errorText || 'Preview failed');
+                    }
+                    return;
+                }
+
+                const responseText = await res.text();
+                alert('Preview generated successfully.');
+
+                const win = window.open();
+                win.document.write(responseText);
+                win.document.close();
+
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        });
+
+        let aircraftData = {};
+        let allAcRegOptions = [];
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('https://csv-json-pipeline-01.s3.ap-south-1.amazonaws.com/data/Operator+Info.json');
+                if (!res.ok) throw new Error('Failed to load aircraft data.');
+
+                const jsonData = await res.json(); // New format: object with acReg keys
+                aircraftData = {};
+
+                for (const acReg in jsonData) {
+                    if (acReg) {
+                        const entry = jsonData[acReg];
+                        const cleanedEntry = {};
+
+                        for (const key in entry) {
+                            let value = entry[key];
+
+                            if (typeof value === 'string') {
+                                value = value.replace(/^,+|,+$/g, '').trim();
+                            }
+
+                            cleanedEntry[key] = value;
+                        }
+
+                        aircraftData[acReg.replace(/^,+|,+$/g, '').trim()] = cleanedEntry;
+                    }
+                }
+
+                allAcRegOptions = Object.keys(aircraftData);
+            } catch (error) {
+                alert('Error loading aircraft data: ' + error.message);
+            }
+        });
+
+        // Custom dropdown logic for A/C Reg input
+        const acRegInput = document.getElementById('acReg');
+        const acRegDropdown = document.getElementById('acRegDropdown');
+
+        function showAcRegDropdown() {
+            if (allAcRegOptions.length === 0) return;
+            acRegDropdown.style.display = 'block';
+            positionDropdown();
+            filterAcRegDropdown();
+        }
+
+        function hideAcRegDropdown() {
+            setTimeout(() => {
+                acRegDropdown.style.display = 'none';
+            }, 400);
+        }
+
+        function positionDropdown() {
+            const rect = acRegInput.getBoundingClientRect();
+            acRegDropdown.style.position = 'absolute';
+            acRegDropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+            acRegDropdown.style.left = (rect.left + window.scrollX) + 'px';
+            acRegDropdown.style.width = rect.width + 'px';
+            acRegDropdown.style.maxHeight = '150px';
+            acRegDropdown.style.overflowY = 'auto';
+            acRegDropdown.style.border = '1px solid #ccc';
+            acRegDropdown.style.backgroundColor = '#fff';
+            acRegDropdown.style.zIndex = 1000;
+        }
+
+        function filterAcRegDropdown() {
+            const filter = acRegInput.value.toUpperCase();
+            acRegDropdown.innerHTML = '';
+
+            if (!filter) {
+                allAcRegOptions.forEach(reg => {
+                    const div = createDropdownItem(reg);
+                    acRegDropdown.appendChild(div);
+                });
+            } else {
+                const filtered = allAcRegOptions.filter(reg => reg.toUpperCase().includes(filter));
+                if (filtered.length === 0) {
+                    const div = document.createElement('div');
+                    div.textContent = 'No matches found';
+                    div.style.color = '#999';
+                    div.style.padding = '5px 10px';
+                    acRegDropdown.appendChild(div);
+                } else {
+                    filtered.forEach(reg => {
+                        const div = createDropdownItem(reg);
+                        acRegDropdown.appendChild(div);
+                    });
+                }
+            }
+        }
+
+        function createDropdownItem(reg) {
+            const div = document.createElement('div');
+            div.textContent = reg;
+            div.style.padding = '5px 10px';
+            div.style.cursor = 'pointer';
+            div.onmouseenter = () => div.style.backgroundColor = '#ddd';
+            div.onmouseleave = () => div.style.backgroundColor = '#fff';
+            div.onclick = () => selectAcReg(reg);
+            return div;
+        }
+
+        function selectAcReg(reg) {
+            acRegInput.value = reg;
+            updateAcDetails();
+            acRegDropdown.style.display = 'none';
+        }
+
+        acRegInput.addEventListener('input', filterAcRegDropdown);
+        acRegInput.addEventListener('focus', showAcRegDropdown);
+        acRegInput.addEventListener('blur', hideAcRegDropdown);
+
+        // Update form fields based on selected aircraft registration
+        function updateAcDetails() {
+            const acReg = acRegInput.value;
+            const typeOfAC = document.getElementById('typeOfAC');
+            const fdrPnSn = document.getElementById('fdrPnSn');
+            const operator = document.getElementById('operator');
+            const lflRefNo = document.getElementById('lflRefNo');
+            const noOfParametersRecorded = document.getElementById('noOfParametersRecorded');
+            const noOfParametersSubmitted = document.getElementById('noOfParametersSubmitted');
+
+            const data = aircraftData[acReg];
+
+            if (data) {
+                typeOfAC.value = data["Aircraft type"] || '';
+                operator.value = data["Operator"] || '';
+                fdrPnSn.value = `${data["Part Number"] || ''};${data["Serial Number"] || ''}`;
+                lflRefNo.value = data["LFL Refrence NO"] || '';
+                noOfParametersRecorded.value = data["No of Parameter recorded"] ?? '';
+                noOfParametersSubmitted.value = data["No of Parameter submitted for Evaluation"] ?? '';
+            } else {
+                typeOfAC.value = '';
+                operator.value = '';
+                fdrPnSn.value = '';
+                lflRefNo.value = '';
+                noOfParametersRecorded.value = '';
+                noOfParametersSubmitted.value = '';
+            }
+        }
+
+        // Display selected file list
+        const fileInput = document.getElementById('files');
+        const fileList = document.getElementById('file-list');
+
+        fileInput.addEventListener('change', () => {
+            fileList.innerHTML = '';
+            Array.from(fileInput.files).forEach(file => {
+                const li = document.createElement('li');
+                li.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                fileList.appendChild(li);
+            });
+        });
+
+        // Clear uploads
+        function clearUploads() {
+            if (confirm('Are you sure you want to delete all uploaded report files?')) {
+                fetch('/clear-uploads', {
+                    method: 'POST'
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error("Failed to clear uploads");
+                        return response.text();
+                    })
+                    .then(responseText => {
+                        fileInput.value = '';
+                        fileList.innerHTML = '';
+                        alert('Uploaded reports cleared successfully.');
+                    })
+                    .catch(err => {
+                        alert('Error clearing uploads: ' + err.message);
+                    });
+            }
+        }
+    </script>
+
+
+
+
+
+
+</body>
+
+
+</html>

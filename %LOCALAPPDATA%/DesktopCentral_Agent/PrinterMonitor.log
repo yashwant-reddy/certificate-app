@@ -1,0 +1,24 @@
+﻿Date	Time	Severity	PID	TID	Function	Message
+25-05-2025	09:57:56.517	 INFO	210400	214528	DllMain	"DLL_PROCESS_ATTACH Thu Jan  2 23:38:14 2025 11.3.2440.11"
+25-05-2025	09:57:56.531	 INFO	210400	214528	DllMain	"PROCESS ATTACHED"
+25-05-2025	09:57:56.536	 INFO	210400	209396	LateInitialization	"Intialization..."
+25-05-2025	09:57:56.541	 INFO	210400	209396	LoadDisplayDevicesName	"DisplayDevices : "
+25-05-2025	09:57:56.546	 INFO	210400	209396	LoadDisplayDevicesName	"\\.\DISPLAY1"
+25-05-2025	09:57:56.550	 INFO	210400	209396	LoadDisplayDevicesName	"\\.\DISPLAY2"
+25-05-2025	09:57:56.554	 INFO	210400	209396	LoadDisplayDevicesName	"\\.\DISPLAY3"
+25-05-2025	09:57:56.558	 INFO	210400	209396	LoadDisplayDevicesName	"\\.\DISPLAY4"
+25-05-2025	09:57:56.570	ERROR	210400	209396	LateInitialization	"std::exception caught = GetFileVersionInfoSizeW failed with 1813
+"
+25-05-2025	09:57:56.574	 INFO	210400	209396	LateInitialization	"Exe = C:\Program Files\Git\usr\bin\vim.exe
+ProductName = 
+FileDescription = 
+ShadowFolder = %LOCALAPPDATA%\EndpointDLP\print-shadow
+ParsingMode = Hybrid
+DeletePrinterShadowFiles = 1
+PrinterUseDisplayDevicesList = 0
+EnablePrinterEscapeProcessing = 1
+EnableWatermarkForAll = 0
+MaxPrintPages = 4294967295
+GdiPlusToken = 1128330875
+ExcludedEscapes = 4117, 37, 4118, 4115, 4121, "
+25-05-2025	09:57:56.578	 INFO	210400	209396	LateInitialization	"Intialization finished"

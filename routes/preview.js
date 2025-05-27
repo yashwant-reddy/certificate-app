@@ -1,14 +1,144 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const fetch = require("node-fetch");
+
+const {
+  cleanAndFilterAndFormatKeys,
+  classifyFieldTypes,
+  safeValue,
+} = require("../utils/helpers");
+
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+} = require("@aws-sdk/lib-dynamodb");
 
 const router = express.Router();
+require("dotenv").config();
+
+// Create DynamoDB client (v3)
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+const dynamoDB = DynamoDBDocumentClient.from(client);
 
 router.get("/", async (req, res) => {
-  // All your preview logic remains the same as in your current `/preview` route
-  // Replace all `__dirname` with `path.join(__dirname, '..')` where needed
-  // ...
+  // 1. Increment the counter in DynamoDB and get updated count
+  const timestamp = new Date().toISOString();
+  const params = {
+    TableName: process.env.DYNAMO_TABLE,
+    Key: { id: "mainCounter" },
+    UpdateExpression: `
+      SET #count = if_not_exists(#count, :zero) + :incr,
+          #ts = :ts
+    `,
+    ExpressionAttributeNames: {
+      "#count": "count",
+      "#ts": "timestamp", // Alias 'timestamp' too
+    },
+    ExpressionAttributeValues: {
+      ":zero": 0,
+      ":incr": 1,
+      ":ts": timestamp,
+    },
+    ReturnValues: "ALL_NEW",
+  };
+
+  let counterValue;
+  try {
+    const updateResult = await dynamoDB.send(new UpdateCommand(params));
+    counterValue = updateResult.Attributes.count;
+    console.log("DynamoDB counter incremented to:", counterValue);
+  } catch (err) {
+    console.error("Error incrementing DynamoDB counter:", err);
+    return res.status(500).send("Failed to increment preview counter.");
+  }
+
+  // Handle images - Define paths to image files
+  const signature1Path = path.join(
+    __dirname,
+    "..",
+    "public",
+    "images",
+    "sasi-signature.png"
+  );
+  const signature2Path = path.join(
+    __dirname,
+    "..",
+    "public",
+    "images",
+    "achhuth-signature.png"
+  );
+  const logoPath = path.join(
+    __dirname,
+    "..",
+    "public",
+    "images",
+    "nestlogo.svg"
+  );
+
+  console.log("Image paths:");
+  console.log("Signature1:", signature1Path);
+  console.log("Signature2:", signature2Path);
+  console.log("Logo:", logoPath);
+
+  // Check if files exist
+  console.log("File existence check:");
+  console.log("Signature1 exists:", fs.existsSync(signature1Path));
+  console.log("Signature2 exists:", fs.existsSync(signature2Path));
+  console.log("Logo exists:", fs.existsSync(logoPath));
+
+  let signature1URI = "";
+  let signature2URI = "";
+  let logoURI = "";
+
+  try {
+    // Read and encode images
+    if (fs.existsSync(signature1Path)) {
+      const signature1Base64 = fs.readFileSync(signature1Path, "base64");
+      signature1URI = `data:image/png;base64,${signature1Base64}`;
+      console.log("Signature1 loaded successfully");
+    } else {
+      console.log("Signature1 file not found");
+    }
+
+    if (fs.existsSync(signature2Path)) {
+      const signature2Base64 = fs.readFileSync(signature2Path, "base64");
+      signature2URI = `data:image/png;base64,${signature2Base64}`;
+      console.log("Signature2 loaded successfully");
+    } else {
+      console.log("Signature2 file not found");
+    }
+
+    if (fs.existsSync(logoPath)) {
+      const logoBase64 = fs.readFileSync(logoPath, "base64");
+      logoURI = `data:image/svg+xml;base64,${logoBase64}`;
+      console.log("Logo loaded successfully");
+    } else {
+      console.log("Logo file not found");
+    }
+  } catch (err) {
+    console.error("Error reading image files:", err);
+    // Continue without images if they can't be read
+  }
+
+  const date = new Date();
+  const currentYear = date.getFullYear();
+
+  const formattedDate = date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  console.log(formattedDate);
+  // Assuming you already have counterValue from DynamoDB or elsewhere
+
+  const certificateRefNo = `${counterValue}/${currentYear}`;
 
   const {
     workOrderNo,
@@ -48,10 +178,12 @@ router.get("/", async (req, res) => {
     .replace("{{natureOfReadout}}", natureOfReadout || "Update")
     .replace("{{lflRefNo}}", lflRefNo || "Update")
     .replace("{{noOfParametersRecorded}}", noOfParametersRecorded || "Update")
-    .replace(
-      "{{noOfParametersSubmitted}}",
-      noOfParametersSubmitted || "Update"
-    );
+    .replace("{{noOfParametersSubmitted}}", noOfParametersSubmitted || "Update")
+    .replace("{{certificateRefNo}}", certificateRefNo || "Update") // Inject counter here
+    .replace("{{currentDate}}", formattedDate || "Update")
+    .replace("{{signature1}}", signature1URI)
+    .replace("{{signature2}}", signature2URI)
+    .replace("{{logo}}", logoURI);
 
   // Fetch aircraft data from S3 JSON
   let acRegDropdownData;
@@ -73,10 +205,6 @@ router.get("/", async (req, res) => {
   }
 
   // Utility function to safely return value or fallback
-  const safeValue = (val) =>
-    val === undefined || val === null || val.toString().trim() === ""
-      ? "Update"
-      : val;
 
   const partNumber = safeValue(record["Part Number"]);
   const serialNumber = safeValue(record["Serial Number"]);
@@ -101,79 +229,8 @@ router.get("/", async (req, res) => {
   }
 
   // Helper: Clean and format keys (remove units, underscores)
-  function cleanAndFilterAndFormatKeys(keys) {
-    const regex =
-      /(_%|_mV|_Kts|_Ft|_\.\.|_\.{3}Year|_\.{3}|_.._Year|_DegC|_Deg\ C|_DecC|_lb|_Psi|_Deg|_g|_MHz|_NM|_mb)$/;
-    return keys.map((str) => str.replace(regex, "").replace(/_/g, " "));
-  }
 
   // Helper: Classify field types for each row of data
-  function classifyFieldTypes(data) {
-    const result = {};
-    const dataArray = Array.isArray(data) ? data : [data];
-    const allKeys = [...new Set(dataArray.flatMap((obj) => Object.keys(obj)))];
-
-    const timeRegex = /^\d{2}:\d{2}:\d{2}$/;
-    const discreteRegex = /^[\w\s+\-/().:%]+$/;
-    const onlyDashesRegex = /^-+$/;
-    const onlyDotsRegex = /^\.+$/;
-
-    for (const key of allKeys) {
-      let hasMeaningfulValue = false;
-      let hasVariableValue = false;
-      let isAllDiscrete = true;
-
-      for (const row of dataArray) {
-        const value = row[key];
-        if (value === undefined || value === null) continue;
-
-        const cleanedValue = value.toString().trim();
-        if (cleanedValue === "") continue;
-
-        const isValidNumber = !isNaN(cleanedValue);
-        const isTimeFormat = timeRegex.test(cleanedValue);
-        const isOnlyDashes =
-          onlyDashesRegex.test(cleanedValue) && cleanedValue.length < 10;
-        const isOnlyDots =
-          onlyDotsRegex.test(cleanedValue) && cleanedValue.length < 10;
-
-        if (
-          cleanedValue !== "---" &&
-          cleanedValue !== "......." &&
-          cleanedValue !== ""
-        ) {
-          hasMeaningfulValue = true;
-        }
-
-        if (isValidNumber || isTimeFormat) {
-          hasVariableValue = true;
-        }
-
-        const isDiscreteCandidate =
-          isOnlyDashes ||
-          isOnlyDots ||
-          cleanedValue === "---" ||
-          cleanedValue === "......." ||
-          discreteRegex.test(cleanedValue);
-
-        if (!isDiscreteCandidate) {
-          isAllDiscrete = false;
-        }
-      }
-
-      if (!hasMeaningfulValue) {
-        result[key] = "Update";
-      } else if (hasVariableValue) {
-        result[key] = "Variable";
-      } else if (isAllDiscrete) {
-        result[key] = "Discrete";
-      } else {
-        result[key] = "Update";
-      }
-    }
-
-    return result;
-  }
 
   // Generate dynamic readout report tables
   let dynamicReadoutTables = "";

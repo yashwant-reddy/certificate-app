@@ -1,503 +1,564 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flight Report Preview</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 2cm 1cm;
-      padding: 0.5cm;
-      font-size: 10px;
-      /* Reduced font size for better page fitting */
-    }
-
-    h1 {
-      text-align: center;
-      color: #333;
-      font-size: 14px;
-      /* Reduced font size */
-      margin-bottom: 10px;
-    }
-
-    /* Container for sections */
-    .report-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 0;
-      padding: 10px;
-    }
-
-    /* Section 1 - Left side */
-    .section-left,
-    .section-right {
-      display: flex;
-      flex-direction: column;
-      margin-top: 10px;
-      width: 45%;
-      text-align: left;
-    }
-
-    .section-full {
-      display: flex;
-      flex-direction: column;
-      margin-top: 10px;
-      width: 100%;
-      text-align: left;
-    }
-
-    .section-title {
-      font-weight: bold;
-      width: 140px;
-      margin-right: 5px;
-      font-size: 10px;
-      /* Adjust section title size */
-    }
-
-    .section-three-title {
-      font-weight: bold;
-      width: 100%;
-      margin-right: 5px;
-      font-size: 10px;
-      /* Adjust section title size */
-    }
-
-    .section-value {
-      margin-left: 5px;
-      flex-grow: 1;
-      font-size: 10px;
-      /* Adjust section value size */
-    }
-
-    .section {
-      display: flex;
-      margin: 5px 0;
-    }
-
-    .wrapper {
-      display: flex;
-      justify-content: flex-start;
-      width: 100%;
-    }
-
-    /* Section 4: Table with logos and text */
-    .section-four {
-      width: 100%;
-      margin-top: 10px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 5px;
-      font-size: 12px;
-      /* Reduced font size for table */
-    }
-
-    td {
-      padding: 5px;
-      text-align: center;
-      border: 1px solid #000;
-    }
-
-    .logo-left img,
-    .logo-right img {
-      width: 40%;
-      /* Adjust logos to be smaller */
-    }
-
-    .certificate-row td {
-      width: 33%;
-      text-align: center;
-      vertical-align: middle;
-    }
-
-    .refrence-number {
-      text-align: right;
-    }
-
-    .remarks-row td,
-    .remarks-text td,
-    .certification-row tr td {
-      text-align: left;
-    }
-
-    .page-break {
-      page-break-before: always;
-    }
-
-    .page-two-box {
-
-      padding: 15px;
-      margin-top: 20px;
-
-    }
-
-    .heading-box {
-      border: 1px solid #000;
-      text-align: center;
-      padding: 5px;
-      background-color: #d3d3d3;
-      margin-bottom: 10px;
-      font-size: 11px;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
-    .key-section {
-      text-align: left;
-      font-size: 10px;
-      line-height: 1.4;
-    }
-
-    /* Styling for table headers */
-    th {
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      background-color: #d3d3d3;
-      /* Light grey background */
-      border: 1px solid #000;
-      /* Border for the header cells */
-      font-weight: bold;
-    }
-
-    .readout-header {
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      background-color: #d3d3d3;
-      border: 1px solid #000;
-      font-weight: bold;
-      text-align: center;
-    }
-
-
-    /* Prevent page URL, date, and page number from printing */
-    @page {
-      margin: 10px 30px;
-      size: A4;
-      /* Set to A4 for standard PDF size */
-    }
-
-    @media print {
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flight Report Preview</title>
+    <style>
       body {
-        visibility: visible;
-      }
-
-      .report-container {
-        page-break-inside: avoid;
-      }
-
-      /* Apply CSS adjustments to fit content to one page */
-      .no-print {
-        display: none !important;
-      }
-
-      table,
-      td {
-        font-size: 8px;
-        /* Reduce font size for table cells */
+        font-family: Arial, sans-serif;
+        margin: 2cm 1cm;
+        padding: 0.5cm;
+        font-size: 10px;
+        /* Reduced font size for better page fitting */
       }
 
       h1 {
+        text-align: center;
+        color: #333;
         font-size: 14px;
-        /* Adjust heading size */
+        /* Reduced font size */
+        margin-bottom: 10px;
       }
 
-      .section-title {
-        font-size: 9px;
-        /* Adjust section title font size */
+      /* Container for sections */
+      .report-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        padding: 10px;
       }
 
-      .section-value {
-        font-size: 9px;
-        /* Adjust section value font size */
-      }
-
-      .wrapper {
-        flex-direction: row;
-        justify-content: space-between;
-      }
-
-      /* Adjust layout to reduce vertical space */
+      /* Section 1 - Left side */
       .section-left,
       .section-right {
-        width: 48%;
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+        width: 45%;
+        text-align: left;
       }
 
       .section-full {
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+        width: 100%;
+        text-align: left;
+      }
+
+      .section-title {
+        font-weight: bold;
+        width: 140px;
+        margin-right: 5px;
+        font-size: 10px;
+        /* Adjust section title size */
+      }
+
+      .section-three-title {
+        font-weight: bold;
+        width: 100%;
+        margin-right: 5px;
+        font-size: 10px;
+        /* Adjust section title size */
+      }
+
+      .section-value {
+        margin-left: 5px;
+        flex-grow: 1;
+        font-size: 10px;
+        /* Adjust section value size */
+      }
+
+      .section {
+        display: flex;
+        margin: 5px 0;
+      }
+
+      .wrapper {
+        display: flex;
+        justify-content: flex-start;
         width: 100%;
       }
 
-      .certificate-row td {
+      /* Section 4: Table with logos and text */
+      .section-four {
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 5px;
+        font-size: 12px;
+        /* Reduced font size for table */
+      }
+
+      td {
+        padding: 5px;
         text-align: center;
+        border: 1px solid #000;
+      }
+
+      .logo-left img,
+      .logo-right img {
+        width: 40%;
+        /* Adjust logos to be smaller */
+      }
+
+      .certificate-row td {
+        width: 33%;
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      .refrence-number {
+        text-align: right;
       }
 
       .remarks-row td,
-      .certification-row td {
+      .remarks-text td,
+      .certification-row tr td {
         text-align: left;
-        padding-left: 10px;
-        padding-right: 10px;
-        font-size: 8px;
-        /* Reduced font size for remarks and certifications */
       }
 
-      /* Ensure no breaks in the table */
-      .no-break {
-        page-break-inside: avoid !important;
+      .page-break {
+        page-break-before: always;
       }
 
-    }
-  </style>
-</head>
+      .page-two-box {
+        padding: 15px;
+        margin-top: 20px;
+      }
 
-<body>
-  <h1>Flight Data Recorder Readout Analysis Report</h1>
+      .heading-box {
+        border: 1px solid #000;
+        text-align: center;
+        padding: 5px;
+        background-color: #d3d3d3;
+        margin-bottom: 10px;
+        font-size: 11px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
 
-  <div class="report-container">
-    <div class="wrapper">
-      <!-- Section 1: Left side -->
-      <div class="section-left">
-        <div class="section">
-          <div class="section-title">Work Order No:</div>
-          <div class="section-value" contenteditable="true">{{workOrderNo}}</div>
-        </div>
-        <div class="section">
-          <div class="section-title">A/C Reg:</div>
-          <div class="section-value" contenteditable="true">{{acReg}}</div>
-        </div>
-        <div class="section">
-          <div class="section-title">Type of A/C:</div>
-          <div class="section-value" contenteditable="true">{{typeOfAC}}</div>
-        </div>
-        <div class="section">
-          <div class="section-title">Date of Dumping:</div>
-          <div class="section-value" contenteditable="true">{{dateOfDumping}}</div>
-        </div>
-        <div class="section">
-          <div class="section-title">Data Received From:</div>
-          <div class="section-value" contenteditable="true">{{dataReceivedFrom}}</div>
-        </div>
-      </div>
+      .key-section {
+        text-align: left;
+        font-size: 10px;
+        line-height: 1.4;
+      }
 
-      <!-- Section 2: Right side -->
-      <div class="section-right">
-        <div class="section">
-          <div class="section-title">Operator:</div>
-          <div class="section-value" contenteditable="true">{{operator}}</div>
-        </div>
-        <div class="section">
-          <div class="section-title">FDR P/N-S/N:</div>
-          <div class="section-value" contenteditable="true">{{fdrPnSn}}</div>
-        </div>
-        <div class="section">
-          <div class="section-title">Date of Flight:</div>
-          <div class="section-value" contenteditable="true">{{dateOfFlight}}</div>
-        </div>
-        <div class="section">
-          <div class="section-title">Flight Sector:</div>
-          <div class="section-value" contenteditable="true">{{flightSector}}</div>
-        </div>
-        <div class="section">
-          <div class="section-title">Nature of Readout:</div>
-          <div class="section-value" contenteditable="true">{{natureOfReadout}}</div>
-        </div>
-      </div>
-    </div>
+      /* Styling for table headers */
+      th {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background-color: #d3d3d3;
+        /* Light grey background */
+        border: 1px solid #000;
+        /* Border for the header cells */
+        font-weight: bold;
+      }
 
-    <!-- Section 3: Full width -->
-    <div class="section-full">
-      <div class="section">
-        <div class="section-three-title">Document Reference and Processing Software:</div>
-      </div>
-      <div class="section">
-        <div class="section-title">LFL Ref No:</div>
-        <div class="section-value" contenteditable="true">{{lflRefNo}}</div>
-      </div>
-      <div class="section">
-        <div class="section-title">Software Type:</div>
-        <div class="section-value" contenteditable="true">FliSAFE</div>
-      </div>
-      <div class="section">
-        <div class="section-title">No of Parameters Recorded:</div>
-        <div class="section-value" contenteditable="true">{{noOfParametersRecorded}}</div>
-      </div>
-      <div class="section">
-        <div class="section-title">No of Parameters Submitted for Evaluation:</div>
-        <div class="section-value" contenteditable="true">{{noOfParametersSubmitted}}</div>
-      </div>
-    </div>
+      .readout-header {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background-color: #d3d3d3;
+        border: 1px solid #000;
+        font-weight: bold;
+        text-align: center;
+      }
 
-    <!-- Section 4: Logos and Text -->
-    <div class="section-four no-break">
-      <table>
-        <tr class="stretch-row">
-          <td class="logo-left" colspan="2">
-            <img src="/nestlogo.svg" alt="Nest Logo">
-          </td>
-          <td class="text-center" colspan="2">
-            <div>SFO Technologies Pvt Ltd</div>
-            <div>Crescent 4, Prestige Shantiniketan,</div>
-            <div>Whitefield Road, Bengaluru,</div>
-            <div>Karnataka 560048</div>
-          </td>
-          <td class="logo-right" colspan="2" style="text-align: center;">
-            <div style="display: inline-block; text-align: left; border: 1px solid black; padding: 8px;"
-              contenteditable="true">
-              SFO/QM/FORM NO: 004<br>
-              ISSUE NO: 2<br>
-              REVISION NO: 4<br>
-              DATE OF ISSUE: SEP 19
+      /* Prevent page URL, date, and page number from printing */
+      @page {
+        margin: 10px 30px;
+        size: A4;
+        /* Set to A4 for standard PDF size */
+      }
+
+      @media print {
+        body {
+          visibility: visible;
+        }
+
+        .report-container {
+          page-break-inside: avoid;
+        }
+
+        /* Apply CSS adjustments to fit content to one page */
+        .no-print {
+          display: none !important;
+        }
+
+        table,
+        td {
+          font-size: 8px;
+          /* Reduce font size for table cells */
+        }
+
+        h1 {
+          font-size: 14px;
+          /* Adjust heading size */
+        }
+
+        .section-title {
+          font-size: 9px;
+          /* Adjust section title font size */
+        }
+
+        .section-value {
+          font-size: 9px;
+          /* Adjust section value font size */
+        }
+
+        .wrapper {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+
+        /* Adjust layout to reduce vertical space */
+        .section-left,
+        .section-right {
+          width: 48%;
+        }
+
+        .section-full {
+          width: 100%;
+        }
+
+        .certificate-row td {
+          text-align: center;
+        }
+
+        .remarks-row td,
+        .certification-row td {
+          text-align: left;
+          padding-left: 10px;
+          padding-right: 10px;
+          font-size: 8px;
+          /* Reduced font size for remarks and certifications */
+        }
+
+        /* Ensure no breaks in the table */
+        .no-break {
+          page-break-inside: avoid !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Flight Data Recorder Readout Analysis Report</h1>
+
+    <div class="report-container">
+      <div class="wrapper">
+        <!-- Section 1: Left side -->
+        <div class="section-left">
+          <div class="section">
+            <div class="section-title">Work Order No:</div>
+            <div class="section-value" contenteditable="true">
+              {{workOrderNo}}
             </div>
-          </td>
+          </div>
+          <div class="section">
+            <div class="section-title">A/C Reg:</div>
+            <div class="section-value" contenteditable="true">{{acReg}}</div>
+          </div>
+          <div class="section">
+            <div class="section-title">Type of A/C:</div>
+            <div class="section-value" contenteditable="true">{{typeOfAC}}</div>
+          </div>
+          <div class="section">
+            <div class="section-title">Date of Dumping:</div>
+            <div class="section-value" contenteditable="true">
+              {{dateOfDumping}}
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Data Received From:</div>
+            <div class="section-value" contenteditable="true">
+              {{dataReceivedFrom}}
+            </div>
+          </div>
+        </div>
 
+        <!-- Section 2: Right side -->
+        <div class="section-right">
+          <div class="section">
+            <div class="section-title">Operator:</div>
+            <div class="section-value" contenteditable="true">{{operator}}</div>
+          </div>
+          <div class="section">
+            <div class="section-title">FDR P/N-S/N:</div>
+            <div class="section-value" contenteditable="true">{{fdrPnSn}}</div>
+          </div>
+          <div class="section">
+            <div class="section-title">Date of Flight:</div>
+            <div class="section-value" contenteditable="true">
+              {{dateOfFlight}}
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Flight Sector:</div>
+            <div class="section-value" contenteditable="true">
+              {{flightSector}}
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Nature of Readout:</div>
+            <div class="section-value" contenteditable="true">
+              {{natureOfReadout}}
+            </div>
+          </div>
+        </div>
+      </div>
 
-        </tr>
-        <!-- Second row: Certificate Information -->
-        <tr class="certificate-row">
-          <td colspan="2" rowspan="2"></td>
-          <td colspan="2" rowspan="2">Certificate of Compliance</td>
-          <td colspan="2">
-            <div class="refrence-number" contenteditable="true">Certificate Ref No: SFO/38/2025</div>
-          </td>
-        </tr>
-        <tr>
-          <td colspan="2"></td>
+      <!-- Section 3: Full width -->
+      <div class="section-full">
+        <div class="section">
+          <div class="section-three-title">
+            Document Reference and Processing Software:
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">LFL Ref No:</div>
+          <div class="section-value" contenteditable="true">{{lflRefNo}}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">Software Type:</div>
+          <div class="section-value" contenteditable="true">FliSAFE</div>
+        </div>
+        <div class="section">
+          <div class="section-title">No of Parameters Recorded:</div>
+          <div class="section-value" contenteditable="true">
+            {{noOfParametersRecorded}}
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">
+            No of Parameters Submitted for Evaluation:
+          </div>
+          <div class="section-value" contenteditable="true">
+            {{noOfParametersSubmitted}}
+          </div>
+        </div>
+      </div>
 
-        </tr>
-        <tr class="table-row-three">
-          <td>Item</td>
-          <td>Description</td>
-          <td>Part No</td>
-          <td>Qty</td>
-          <td>Serial No</td>
-          <td>Status Work</td>
-        </tr>
+      <!-- Section 4: Logos and Text -->
+      <div class="section-four no-break">
+        <table>
+          <tr class="stretch-row">
+            <td class="logo-left" colspan="2">
+              <img src="{{logo}}" alt="Nest Logo" />
+            </td>
+            <td class="text-center" colspan="2">
+              <div>SFO Technologies Pvt Ltd</div>
+              <div>Crescent 4, Prestige Shantiniketan,</div>
+              <div>Whitefield Road, Bengaluru,</div>
+              <div>Karnataka 560048</div>
+            </td>
+            <td class="logo-right" colspan="2" style="text-align: center">
+              <div
+                style="
+                  display: inline-block;
+                  text-align: left;
+                  border: 1px solid black;
+                  padding: 8px;
+                "
+                contenteditable="true"
+              >
+                SFO/QM/FORM NO: 004<br />
+                ISSUE NO: 2<br />
+                REVISION NO: 4<br />
+                DATE OF ISSUE: SEP 19
+              </div>
+            </td>
+          </tr>
+          <!-- Second row: Certificate Information -->
+          <tr class="certificate-row">
+            <td colspan="2" rowspan="2"></td>
+            <td colspan="2" rowspan="2">Certificate of Compliance</td>
+            <td colspan="2">
+              <div class="refrence-number" contenteditable="true">
+                Certificate Ref No: SFO/38/2025
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2"></td>
+          </tr>
+          <tr class="table-row-three">
+            <td>Item</td>
+            <td>Description</td>
+            <td>Part No</td>
+            <td>Qty</td>
+            <td>Serial No</td>
+            <td>Status Work</td>
+          </tr>
 
-        <!-- Row 4 -->
-        <tr class="table-row-four">
-          <td contenteditable="true">1</td>
-          <td contenteditable="true">Update</td>
-          <td contenteditable="true">{{partNumber}}</td>
-          <td contenteditable="true">1</td>
-          <td contenteditable="true">{{serialNumber}}</td>
-          <td contenteditable="true">Readout Report</td>
-        </tr>
+          <!-- Row 4 -->
+          <tr class="table-row-four">
+            <td contenteditable="true">1</td>
+            <td contenteditable="true">Update</td>
+            <td contenteditable="true">{{partNumber}}</td>
+            <td contenteditable="true">1</td>
+            <td contenteditable="true">{{serialNumber}}</td>
+            <td contenteditable="true">Readout Report</td>
+          </tr>
 
-        <!-- 5th Row with Remarks and Comments -->
-        <tr class="remarks-row">
-          <td colspan="6" class="remarks-text">
-            <p><strong>Remarks:</strong></p>
-            <p>Certified that the Flight data transcription is carried out in accordance with DGCA,CAR Sec 2 Series I
-              Part V and AAC No. 3 of 2019.</p>
-            <p><strong>Note:</strong> The operator is advised to go through the readout report to determine that the
-              SSFDR system is functioning correctly.</p>
-            <p><strong>Comments:</strong> This FDR readout report relates to Reliance Transport & Travels, Falcon 2000,
-              VT-AAT.</p>
-          </td>
-        </tr>
+          <!-- 5th Row with Remarks and Comments -->
+          <tr class="remarks-row">
+            <td colspan="6" class="remarks-text">
+              <p><strong>Remarks:</strong></p>
+              <p>
+                Certified that the Flight data transcription is carried out in
+                accordance with DGCA,CAR Sec 2 Series I Part V and AAC No. 3 of
+                2019.
+              </p>
+              <p>
+                <strong>Note:</strong> The operator is advised to go through the
+                readout report to determine that the SSFDR system is functioning
+                correctly.
+              </p>
+              <p>
+                <strong>Comments:</strong> This FDR readout report relates to
+                Reliance Transport & Travels, Falcon 2000, VT-AAT.
+              </p>
+            </td>
+          </tr>
 
-        <!-- 6th Row with Certification Text -->
-        <tr class="certification-row">
-          <td colspan="6" class="remarks-text">
-            <p><strong>It is certified that the whole of the supplies and/or services supplied with this certificate
-                have been inspected or otherwise quality controlled and unless otherwise stated above are in accordance
-                with the requirements of the work order, drawings and specifications relative thereto and conform in all
-                respects with the conditions and requirements of the contract.</strong></p>
-          </td>
-        </tr>
+          <!-- 6th Row with Certification Text -->
+          <tr class="certification-row">
+            <td colspan="6" class="remarks-text">
+              <p>
+                <strong
+                  >It is certified that the whole of the supplies and/or
+                  services supplied with this certificate have been inspected or
+                  otherwise quality controlled and unless otherwise stated above
+                  are in accordance with the requirements of the work order,
+                  drawings and specifications relative thereto and conform in
+                  all respects with the conditions and requirements of the
+                  contract.</strong
+                >
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
 
+    <!-- Footer Section that should appear on Page 2 -->
+    <div class="page-break"></div>
+
+    <div class="page-two-box">
+      <h5 class="heading-box">Parameter examination</h5>
+
+      <div class="key-section">
+        <p><strong>Key:</strong></p>
+        <p>
+          <strong>S</strong> = Show: (Checked and seen to function – the
+          parameter was seen to operate and the values appear to be reasonable
+          for the phase of flight).
+        </p>
+        <p>
+          <strong>N/S</strong> = No Show: (Checked, but no movement or change of
+          state – the parameter was not seen to operate but the values seen
+          appear to be reasonable for the phase of flight).
+        </p>
+        <p>
+          <strong>N/R</strong> = Not Recorded: (Parameter is not fitted to this
+          aircraft – may be an optional parameter).
+        </p>
+        <p>
+          <strong>U/S</strong> = Unserviceable: (Checked and found to have a
+          reportable defect).
+        </p>
+      </div>
+
+      <!-- Table -->
+      <table>
+        <thead>
+          <tr>
+            <th>SL NO</th>
+            <th>PARAMETER NAME</th>
+            <th>PARAMETER TYPE</th>
+            <th>S</th>
+            <th>N/S</th>
+            <th>N/R</th>
+            <th>U/S</th>
+            <th>COMMENTS</th>
+          </tr>
+        </thead>
+
+        <!-- the read out table are rendred here -->
+        <tbody>
+          {{dynamicReadoutTables}}
+        </tbody>
       </table>
-    </div>
-  </div>
 
-  <!-- Footer Section that should appear on Page 2 -->
-  <div class="page-break"></div>
+      <br /><br />
 
-  <div class="page-two-box">
-    <h5 class="heading-box">Parameter examination</h5>
+      <div class="key-section" style="text-align: left">
+        <p><strong>Comments:</strong></p>
+        <p contenteditable="true">
+          1. Status of recorded parameters (Sensor Inputs): Regular
+        </p>
+        <p contenteditable="true">
+          2. Quality of recorded data (Frame count): Good
+        </p>
+        <p contenteditable="true">3. Validity of recorded parameters: Good</p>
+        <p contenteditable="true">4. Status of FDR unit: Serviceable</p>
 
-    <div class="key-section">
-      <p><strong>Key:</strong></p>
-      <p><strong>S</strong> = Show: (Checked and seen to function – the parameter was seen to operate and the values
-        appear to be reasonable for the phase of flight).</p>
-      <p><strong>N/S</strong> = No Show: (Checked, but no movement or change of state – the parameter was not seen to
-        operate but the values seen appear to be reasonable for the phase of flight).</p>
-      <p><strong>N/R</strong> = Not Recorded: (Parameter is not fitted to this aircraft – may be an optional parameter).
-      </p>
-      <p><strong>U/S</strong> = Unserviceable: (Checked and found to have a reportable defect).</p>
-    </div>
+        <br />
 
-    <!-- Table -->
-    <table>
-      <thead>
-        <tr>
-          <th>SL NO</th>
-          <th>PARAMETER NAME</th>
-          <th>PARAMETER TYPE</th>
-          <th>S</th>
-          <th>N/S</th>
-          <th>N/R</th>
-          <th>U/S</th>
-          <th>COMMENTS</th>
-        </tr>
-      </thead>
-
-      <!-- the read out table are rendred here -->
-      <tbody>
-        {{dynamicReadoutTables}}
-      </tbody>
-
-
-
-
-    </table>
-
-    <br><br>
-
-    <div class="key-section" style="text-align: left;">
-      <p><strong>Comments:</strong></p>
-      <p contenteditable="true">1. Status of recorded parameters (Sensor Inputs): Regular</p>
-      <p contenteditable="true">2. Quality of recorded data (Frame count): Good</p>
-      <p contenteditable="true">3. Validity of recorded parameters: Good</p>
-      <p contenteditable="true">4. Status of FDR unit: Serviceable</p>
-
-      <br>
-
-      <p><strong>Enclosures in Electronic format:</strong></p>
-      <p contenteditable="true">1. Readout Report in PDF Format</p>
-      <p contenteditable="true">2. Readout Report in Graphical formats</p>
-      <p contenteditable="true">3. This Readout Analysis Report</p>
-    </div>
-
-    <div
-      style="border: 1px solid #000; padding: 10px; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-      <div style="text-align: center; width: 48%;">
-        <p><strong>Readout report done by:</strong></p>
-        <img src="/achhuth-signature.png" alt="signature-1">
-        <div>
-          <p>Achhuth Reddy H M</p>
-          <p>Flight Data Analyst</p>
-          <p>Approval No: SFO/009</p>
-        </div>
+        <p><strong>Enclosures in Electronic format:</strong></p>
+        <p contenteditable="true">1. Readout Report in PDF Format</p>
+        <p contenteditable="true">2. Readout Report in Graphical formats</p>
+        <p contenteditable="true">3. This Readout Analysis Report</p>
+      </div>
+      <div
+        style="
+          display: flex;
+          justify-content: left;
+          align-items: center;
+          padding: 4px;
+        "
+      >
+        <strong>Report Generated on : </strong>
+        <span>{{currentDate}}</span>
       </div>
 
-      <div style="text-align: center; width: 48%; padding-left: 20px;">
-        <p><strong>Readout report verified by:</strong></p>
-        <img src="/sasi-signature.png" alt="signature-1">
-        <div>
-          <p>Sasi Rekhaa C</p>
-          <p>Test Report Signatory</p>
-          <p>Approval No: SFO/002</p>
+      <div
+        style="
+          border: 1px solid #000;
+          padding: 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 20px;
+        "
+      >
+        <div style="text-align: center; width: 48%">
+          <p><strong>Readout report done by:</strong></p>
+          <img src="{{signature2}}" alt="achhuth signature" />
+          <div>
+            <p>Achhuth Reddy H M</p>
+            <p>Flight Data Analyst</p>
+            <p>Approval No: SFO/009</p>
+          </div>
+        </div>
+
+        <div style="text-align: center; width: 48%; padding-left: 20px">
+          <p><strong>Readout report verified by:</strong></p>
+          <img src="{{signature1}}" alt="sasi signature" />
+          <div>
+            <p>Sasi Rekhaa C</p>
+            <p>Test Report Signatory</p>
+            <p>Approval No: SFO/002</p>
+          </div>
         </div>
       </div>
     </div>
-
-
-  </div>
-
-</body>
-
+  </body>
 </html>

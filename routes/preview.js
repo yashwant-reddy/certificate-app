@@ -167,9 +167,9 @@ router.get("/", async (req, res) => {
   // Inject query params placeholders
   html = html
     .replace("{{workOrderNo}}", workOrderNo || "Update")
-    .replace("{{operator}}", operator || "Update")
-    .replace("{{acReg}}", acReg || "Update")
-    .replace("{{typeOfAC}}", typeOfAC || "Update")
+    .replace(/{{operator}}/g, operator || "Update")
+    .replace(/{{acReg}}/g, acReg || "Update")
+    .replace(/{{typeOfAC}}/g, typeOfAC || "Update")
     .replace("{{dateOfDumping}}", dateOfDumping || "Update")
     .replace("{{dataReceivedFrom}}", dataReceivedFrom || "Update")
     .replace("{{fdrPnSn}}", fdrPnSn || "Update")

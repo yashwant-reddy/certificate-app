@@ -1,5 +1,6 @@
 {
   "watch": ["server.js", "routes/", "utils/"],
   "ext": "js,json",
-  "ignore": ["node_modules/", "upload/"]
+  "ignore": ["node_modules/", "upload/"],
+  "exec": "node server.js && touch public/__trigger_reload.css"
 }

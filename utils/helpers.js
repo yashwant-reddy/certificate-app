@@ -3,8 +3,9 @@
 // Clean and format field keys
 function cleanAndFilterAndFormatKeys(keys) {
   const regex =
-    /(_%|_mV|_Kts|_Ft|_\.\.|_\.{3}Year|_\.{3}|_.._Year|_DegC|_Deg\ C|_DecC|_lb|_Psi|_Deg|_g|_MHz|_NM|_mb)$/;
-  return keys.map((str) => str.replace(regex, "").replace(/_/g, " "));
+    /(_%|_mV|_Kts|_Ft|_\.\.|_\.{3}Year|_\.{3}|_.._Year|_DegC|_Deg C|_DecC|_lb|_Psi|_Deg|_g|_MHz|_NM|_mb)$/;
+
+  return keys.map((str) => str.replace(regex, '').replace(/_/g, ' '));
 }
 
 // Classify field types in CSV rows
@@ -28,7 +29,7 @@ function classifyFieldTypes(data) {
       if (value === undefined || value === null) continue;
 
       const cleanedValue = value.toString().trim();
-      if (cleanedValue === "") continue;
+      if (cleanedValue === '') continue;
 
       const isOnlyDashes = onlyDashesRegex.test(cleanedValue);
       const isOnlyDots = onlyDotsRegex.test(cleanedValue);
@@ -52,13 +53,13 @@ function classifyFieldTypes(data) {
     }
 
     if (isAllUpdate) {
-      result[key] = "Update";
+      result[key] = 'Update';
     } else if (isAnyVariable) {
-      result[key] = "Variable";
+      result[key] = 'Variable';
     } else if (isAllDiscrete) {
-      result[key] = "Discrete";
+      result[key] = 'Discrete';
     } else {
-      result[key] = "Update";
+      result[key] = 'Update';
     }
   }
 
@@ -67,7 +68,7 @@ function classifyFieldTypes(data) {
 
 // Safely handle undefined or blank values
 function safeValue(val) {
-  return val === undefined || val === null ? "Update" : val;
+  return val === undefined || val === null ? 'Update' : val;
 }
 
 module.exports = {

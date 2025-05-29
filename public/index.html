@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -54,11 +54,11 @@
         font-weight: bold;
       }
 
-      input[type="file"] {
+      input[type='file'] {
         display: none;
       }
 
-      input[type="text"],
+      input[type='text'],
       input[list],
       select {
         display: block;
@@ -296,38 +296,38 @@
     <!-- Script to auto-fill based on A/C Reg -->
     <script>
       document
-        .getElementById("uploadForm")
-        .addEventListener("submit", async function (e) {
+        .getElementById('uploadForm')
+        .addEventListener('submit', async function (e) {
           e.preventDefault();
 
           const form = e.target;
-          const fileInput = document.getElementById("files");
+          const fileInput = document.getElementById('files');
 
           if (!fileInput.files.length) {
-            alert("Please select at least one CSV file to upload.");
+            alert('Please select at least one CSV file to upload.');
             return;
           }
 
           const formData = new FormData(form);
 
           try {
-            const res = await fetch("/upload", {
-              method: "POST",
+            const res = await fetch('/upload', {
+              method: 'POST',
               body: formData,
             });
 
-            if (!res.ok) throw new Error("Upload failed");
+            if (!res.ok) throw new Error('Upload failed');
 
             const responseText = await res.text();
-            alert("CSV files uploaded successfully.");
+            alert('CSV files uploaded successfully.');
           } catch (err) {
-            alert("Upload error: " + err.message);
+            alert('Upload error: ' + err.message);
           }
         });
 
       document
-        .getElementById("htmlForm")
-        .addEventListener("submit", async function (e) {
+        .getElementById('htmlForm')
+        .addEventListener('submit', async function (e) {
           e.preventDefault();
 
           const form = e.target;
@@ -336,56 +336,56 @@
 
           const generateButton = form.querySelector("button[type='submit']");
           generateButton.disabled = true;
-          generateButton.style.backgroundColor = "#999"; // Grey color when disabled
-          generateButton.textContent = "Generating...";
+          generateButton.style.backgroundColor = '#999'; // Grey color when disabled
+          generateButton.textContent = 'Generating...';
 
           try {
-            const res = await fetch("/preview?" + params.toString(), {
-              method: "GET",
+            const res = await fetch('/preview?' + params.toString(), {
+              method: 'GET',
             });
 
-            const contentType = res.headers.get("content-type");
+            const contentType = res.headers.get('content-type');
 
             if (!res.ok) {
               const errorText =
-                contentType && contentType.includes("application/json")
+                contentType && contentType.includes('application/json')
                   ? JSON.stringify(await res.json())
                   : await res.text();
-              alert(errorText || "Preview failed");
+              alert(errorText || 'Preview failed');
 
               // Re-enable the button and restore appearance
               generateButton.disabled = false;
-              generateButton.style.backgroundColor = "#0073e6";
-              generateButton.textContent = "Generate HTML Preview";
+              generateButton.style.backgroundColor = '#0073e6';
+              generateButton.textContent = 'Generate HTML Preview';
               return;
             }
 
             const htmlContent = await res.text();
 
-            const blob = new Blob([htmlContent], { type: "text/html" });
+            const blob = new Blob([htmlContent], { type: 'text/html' });
             const previewUrl = URL.createObjectURL(blob);
-            window.open(previewUrl, "_blank");
+            window.open(previewUrl, '_blank');
 
-            generateButton.textContent = "Generated ✔️";
+            generateButton.textContent = 'Generated ✔️';
           } catch (err) {
-            alert("Network error: " + err.message);
+            alert('Network error: ' + err.message);
 
             // Re-enable the button and restore appearance
             generateButton.disabled = false;
-            generateButton.style.backgroundColor = "#0073e6";
-            generateButton.textContent = "Generate HTML Preview";
+            generateButton.style.backgroundColor = '#0073e6';
+            generateButton.textContent = 'Generate HTML Preview';
           }
         });
 
       let aircraftData = {};
       let allAcRegOptions = [];
 
-      window.addEventListener("DOMContentLoaded", async () => {
+      window.addEventListener('DOMContentLoaded', async () => {
         try {
           const res = await fetch(
-            "https://csv-json-pipeline-01.s3.ap-south-1.amazonaws.com/data/Operator+Info.json"
+            'https://csv-json-pipeline-01.s3.ap-south-1.amazonaws.com/data/Operator+Info.json'
           );
-          if (!res.ok) throw new Error("Failed to load aircraft data.");
+          if (!res.ok) throw new Error('Failed to load aircraft data.');
 
           const jsonData = await res.json(); // New format: object with acReg keys
           aircraftData = {};
@@ -398,56 +398,56 @@
               for (const key in entry) {
                 let value = entry[key];
 
-                if (typeof value === "string") {
-                  value = value.replace(/^,+|,+$/g, "").trim();
+                if (typeof value === 'string') {
+                  value = value.replace(/^,+|,+$/g, '').trim();
                 }
 
                 cleanedEntry[key] = value;
               }
 
-              aircraftData[acReg.replace(/^,+|,+$/g, "").trim()] = cleanedEntry;
+              aircraftData[acReg.replace(/^,+|,+$/g, '').trim()] = cleanedEntry;
             }
           }
 
           allAcRegOptions = Object.keys(aircraftData);
         } catch (error) {
-          alert("Error loading aircraft data: " + error.message);
+          alert('Error loading aircraft data: ' + error.message);
         }
       });
 
       // Custom dropdown logic for A/C Reg input
-      const acRegInput = document.getElementById("acReg");
-      const acRegDropdown = document.getElementById("acRegDropdown");
+      const acRegInput = document.getElementById('acReg');
+      const acRegDropdown = document.getElementById('acRegDropdown');
 
       function showAcRegDropdown() {
         if (allAcRegOptions.length === 0) return;
-        acRegDropdown.style.display = "block";
+        acRegDropdown.style.display = 'block';
         positionDropdown();
         filterAcRegDropdown();
       }
 
       function hideAcRegDropdown() {
         setTimeout(() => {
-          acRegDropdown.style.display = "none";
+          acRegDropdown.style.display = 'none';
         }, 400);
       }
 
       function positionDropdown() {
         const rect = acRegInput.getBoundingClientRect();
-        acRegDropdown.style.position = "absolute";
-        acRegDropdown.style.top = rect.bottom + window.scrollY + "px";
-        acRegDropdown.style.left = rect.left + window.scrollX + "px";
-        acRegDropdown.style.width = rect.width + "px";
-        acRegDropdown.style.maxHeight = "150px";
-        acRegDropdown.style.overflowY = "auto";
-        acRegDropdown.style.border = "1px solid #ccc";
-        acRegDropdown.style.backgroundColor = "#fff";
+        acRegDropdown.style.position = 'absolute';
+        acRegDropdown.style.top = rect.bottom + window.scrollY + 'px';
+        acRegDropdown.style.left = rect.left + window.scrollX + 'px';
+        acRegDropdown.style.width = rect.width + 'px';
+        acRegDropdown.style.maxHeight = '150px';
+        acRegDropdown.style.overflowY = 'auto';
+        acRegDropdown.style.border = '1px solid #ccc';
+        acRegDropdown.style.backgroundColor = '#fff';
         acRegDropdown.style.zIndex = 1000;
       }
 
       function filterAcRegDropdown() {
         const filter = acRegInput.value.toUpperCase();
-        acRegDropdown.innerHTML = "";
+        acRegDropdown.innerHTML = '';
 
         if (!filter) {
           allAcRegOptions.forEach((reg) => {
@@ -459,10 +459,10 @@
             reg.toUpperCase().includes(filter)
           );
           if (filtered.length === 0) {
-            const div = document.createElement("div");
-            div.textContent = "No matches found";
-            div.style.color = "#999";
-            div.style.padding = "5px 10px";
+            const div = document.createElement('div');
+            div.textContent = 'No matches found';
+            div.style.color = '#999';
+            div.style.padding = '5px 10px';
             acRegDropdown.appendChild(div);
           } else {
             filtered.forEach((reg) => {
@@ -474,12 +474,12 @@
       }
 
       function createDropdownItem(reg) {
-        const div = document.createElement("div");
+        const div = document.createElement('div');
         div.textContent = reg;
-        div.style.padding = "5px 10px";
-        div.style.cursor = "pointer";
-        div.onmouseenter = () => (div.style.backgroundColor = "#ddd");
-        div.onmouseleave = () => (div.style.backgroundColor = "#fff");
+        div.style.padding = '5px 10px';
+        div.style.cursor = 'pointer';
+        div.onmouseenter = () => (div.style.backgroundColor = '#ddd');
+        div.onmouseleave = () => (div.style.backgroundColor = '#fff');
         div.onclick = () => selectAcReg(reg);
         return div;
       }
@@ -487,57 +487,57 @@
       function selectAcReg(reg) {
         acRegInput.value = reg;
         updateAcDetails();
-        acRegDropdown.style.display = "none";
+        acRegDropdown.style.display = 'none';
       }
 
-      acRegInput.addEventListener("input", filterAcRegDropdown);
-      acRegInput.addEventListener("focus", showAcRegDropdown);
-      acRegInput.addEventListener("blur", hideAcRegDropdown);
+      acRegInput.addEventListener('input', filterAcRegDropdown);
+      acRegInput.addEventListener('focus', showAcRegDropdown);
+      acRegInput.addEventListener('blur', hideAcRegDropdown);
 
       // Update form fields based on selected aircraft registration
       function updateAcDetails() {
         const acReg = acRegInput.value;
-        const typeOfAC = document.getElementById("typeOfAC");
-        const fdrPnSn = document.getElementById("fdrPnSn");
-        const operator = document.getElementById("operator");
-        const lflRefNo = document.getElementById("lflRefNo");
+        const typeOfAC = document.getElementById('typeOfAC');
+        const fdrPnSn = document.getElementById('fdrPnSn');
+        const operator = document.getElementById('operator');
+        const lflRefNo = document.getElementById('lflRefNo');
         const noOfParametersRecorded = document.getElementById(
-          "noOfParametersRecorded"
+          'noOfParametersRecorded'
         );
         const noOfParametersSubmitted = document.getElementById(
-          "noOfParametersSubmitted"
+          'noOfParametersSubmitted'
         );
 
         const data = aircraftData[acReg];
 
         if (data) {
-          typeOfAC.value = data["Aircraft type"] || "";
-          operator.value = data["Operator"] || "";
-          fdrPnSn.value = `${data["Part Number"] || ""};${
-            data["Serial Number"] || ""
+          typeOfAC.value = data['Aircraft type'] || '';
+          operator.value = data['Operator'] || '';
+          fdrPnSn.value = `${data['Part Number'] || ''};${
+            data['Serial Number'] || ''
           }`;
-          lflRefNo.value = data["LFL Refrence NO"] || "";
-          noOfParametersRecorded.value = data["No of Parameter recorded"] ?? "";
+          lflRefNo.value = data['LFL Refrence NO'] || '';
+          noOfParametersRecorded.value = data['No of Parameter recorded'] ?? '';
           noOfParametersSubmitted.value =
-            data["No of Parameter submitted for Evaluation"] ?? "";
+            data['No of Parameter submitted for Evaluation'] ?? '';
         } else {
-          typeOfAC.value = "";
-          operator.value = "";
-          fdrPnSn.value = "";
-          lflRefNo.value = "";
-          noOfParametersRecorded.value = "";
-          noOfParametersSubmitted.value = "";
+          typeOfAC.value = '';
+          operator.value = '';
+          fdrPnSn.value = '';
+          lflRefNo.value = '';
+          noOfParametersRecorded.value = '';
+          noOfParametersSubmitted.value = '';
         }
       }
 
       // Display selected file list
-      const fileInput = document.getElementById("files");
-      const fileList = document.getElementById("file-list");
+      const fileInput = document.getElementById('files');
+      const fileList = document.getElementById('file-list');
 
-      fileInput.addEventListener("change", () => {
-        fileList.innerHTML = "";
+      fileInput.addEventListener('change', () => {
+        fileList.innerHTML = '';
         Array.from(fileInput.files).forEach((file) => {
-          const li = document.createElement("li");
+          const li = document.createElement('li');
           li.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(
             1
           )} KB)`;
@@ -548,22 +548,22 @@
       // Clear uploads
       function clearUploads() {
         if (
-          confirm("Are you sure you want to delete all uploaded report files?")
+          confirm('Are you sure you want to delete all uploaded report files?')
         ) {
-          fetch("/clear-uploads", {
-            method: "POST",
+          fetch('/clear-uploads', {
+            method: 'POST',
           })
             .then((response) => {
-              if (!response.ok) throw new Error("Failed to clear uploads");
+              if (!response.ok) throw new Error('Failed to clear uploads');
               return response.text();
             })
             .then((responseText) => {
-              fileInput.value = "";
-              fileList.innerHTML = "";
-              alert("Uploaded reports cleared successfully.");
+              fileInput.value = '';
+              fileList.innerHTML = '';
+              alert('Uploaded reports cleared successfully.');
             })
             .catch((err) => {
-              alert("Error clearing uploads: " + err.message);
+              alert('Error clearing uploads: ' + err.message);
             });
         }
       }

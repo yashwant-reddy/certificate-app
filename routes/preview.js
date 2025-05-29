@@ -1,3 +1,4 @@
+// Import necessary modules and utilities
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -8,6 +9,12 @@ const {
   safeValue,
 } = require("../utils/helpers");
 
+const {
+  isAllSameValue,
+  checkSpecialPattern,
+} = require("../utils/significanceCheck");
+
+// Import AWS SDK and DynamoDB client libraries
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const {
   DynamoDBDocumentClient,
@@ -33,19 +40,9 @@ router.get("/", async (req, res) => {
   const params = {
     TableName: process.env.DYNAMO_TABLE,
     Key: { id: "mainCounter" },
-    UpdateExpression: `
-      SET #count = if_not_exists(#count, :zero) + :incr,
-          #ts = :ts
-    `,
-    ExpressionAttributeNames: {
-      "#count": "count",
-      "#ts": "timestamp", // Alias 'timestamp' too
-    },
-    ExpressionAttributeValues: {
-      ":zero": 0,
-      ":incr": 1,
-      ":ts": timestamp,
-    },
+    UpdateExpression: `SET #count = if_not_exists(#count, :zero) + :incr, #ts = :ts`,
+    ExpressionAttributeNames: { "#count": "count", "#ts": "timestamp" },
+    ExpressionAttributeValues: { ":zero": 0, ":incr": 1, ":ts": timestamp },
     ReturnValues: "ALL_NEW",
   };
 
@@ -97,39 +94,35 @@ router.get("/", async (req, res) => {
   let signature2URI = "";
   let logoURI = "";
 
+  // Read and encode image files to Base64 URIs
   try {
-    // Read and encode images
     if (fs.existsSync(signature1Path)) {
-      const signature1Base64 = fs.readFileSync(signature1Path, "base64");
-      signature1URI = `data:image/png;base64,${signature1Base64}`;
+      signature1URI = `data:image/png;base64,${fs.readFileSync(
+        signature1Path,
+        "base64"
+      )}`;
       console.log("Signature1 loaded successfully");
-    } else {
-      console.log("Signature1 file not found");
     }
-
     if (fs.existsSync(signature2Path)) {
-      const signature2Base64 = fs.readFileSync(signature2Path, "base64");
-      signature2URI = `data:image/png;base64,${signature2Base64}`;
+      signature2URI = `data:image/png;base64,${fs.readFileSync(
+        signature2Path,
+        "base64"
+      )}`;
       console.log("Signature2 loaded successfully");
-    } else {
-      console.log("Signature2 file not found");
     }
-
     if (fs.existsSync(logoPath)) {
-      const logoBase64 = fs.readFileSync(logoPath, "base64");
-      logoURI = `data:image/svg+xml;base64,${logoBase64}`;
+      logoURI = `data:image/svg+xml;base64,${fs.readFileSync(
+        logoPath,
+        "base64"
+      )}`;
       console.log("Logo loaded successfully");
-    } else {
-      console.log("Logo file not found");
     }
   } catch (err) {
     console.error("Error reading image files:", err);
-    // Continue without images if they can't be read
   }
 
   const date = new Date();
   const currentYear = date.getFullYear();
-
   const formattedDate = date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -140,6 +133,7 @@ router.get("/", async (req, res) => {
 
   const certificateRefNo = `${counterValue}/${currentYear}`;
 
+  // Extract query parameters from request URL
   const {
     workOrderNo,
     operator,
@@ -156,15 +150,17 @@ router.get("/", async (req, res) => {
     noOfParametersSubmitted,
   } = req.query;
 
+  // Define path to HTML template
   const templatePath = path.join(__dirname, "..", "templates", "template.html");
 
+  // URL to fetch aircraft registration metadata JSON from S3
   const aircraftJsonUrl =
     "https://csv-json-pipeline-01.s3.ap-south-1.amazonaws.com/data/Operator+Info.json";
 
-  // Read template first
+  // Read the HTML template
   let html = fs.readFileSync(templatePath, "utf-8");
 
-  // Inject query params placeholders
+  // Replace template placeholders with query parameters and image URIs
   html = html
     .replace("{{workOrderNo}}", workOrderNo || "Update")
     .replace(/{{operator}}/g, operator || "Update")
@@ -179,8 +175,8 @@ router.get("/", async (req, res) => {
     .replace("{{lflRefNo}}", lflRefNo || "Update")
     .replace("{{noOfParametersRecorded}}", noOfParametersRecorded || "Update")
     .replace("{{noOfParametersSubmitted}}", noOfParametersSubmitted || "Update")
-    .replace("{{certificateRefNo}}", certificateRefNo || "Update") // Inject counter here
-    .replace("{{currentDate}}", formattedDate || "Update")
+    .replace("{{certificateRefNo}}", certificateRefNo)
+    .replace("{{currentDate}}", formattedDate)
     .replace("{{signature1}}", signature1URI)
     .replace("{{signature2}}", signature2URI)
     .replace("{{logo}}", logoURI);
@@ -302,27 +298,41 @@ router.get("/", async (req, res) => {
         const parameterType = paramInfo.type || "";
 
         const values = content.map((row) => row[rawKey]);
-        const uniqueValues = [...new Set(values.map((v) => JSON.stringify(v)))];
-        const isAllSame = uniqueValues.length === 1;
-        const remark = isAllSame
-          ? `Always "${JSON.parse(uniqueValues[0])}"`
-          : "";
+        console.log(
+          `Checking patterns for key: "${cleanedKey}", values:`,
+          values.slice(0, 20)
+        );
+
+        const { isAllSame, sameValue } = isAllSameValue(values);
+        const { usePattern, patternValue } = checkSpecialPattern(values);
+
+        if (usePattern) {
+          console.log(
+            `[Pattern Detected] File: Readout Report ${i}.json | Key: "${cleanedKey}" | Pattern Value: "${patternValue}"`
+          );
+        }
+
+        const remark =
+          isAllSame || usePattern
+            ? `Always "${isAllSame ? sameValue : patternValue}"`
+            : "";
 
         return `
-        <tr>
-          <td>${sNumber++}</td>
-          <td contenteditable="true">${cleanedKey}</td>
-          <td contenteditable="true">${parameterType}</td>
-          <td contenteditable="true">${isAllSame ? "" : "✔"}</td>
-          <td contenteditable="true">${isAllSame ? "✔" : ""}</td>
-          <td contenteditable="true"></td>
-          <td contenteditable="true"></td>
-          <td contenteditable="true">${remark}</td>
-        </tr>
-      `;
+      <tr>
+        <td>${sNumber++}</td>
+        <td contenteditable="true">${cleanedKey}</td>
+         <td contenteditable="true">${parameterType}</td>
+        <td contenteditable="true">${isAllSame || usePattern ? "" : "✔"}</td>
+        <td contenteditable="true">${isAllSame || usePattern ? "✔" : ""}</td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true">${remark}</td>
+      </tr>
+    `;
       })
       .join("");
 
+    // Append this report’s header and rows to the final HTML
     dynamicReadoutTables += `
       <tr>
         <td colspan="8" class="readout-header">Readout Report ${i}</td>
@@ -331,9 +341,12 @@ router.get("/", async (req, res) => {
     `;
   }
 
+  // Inject generated report tables into final HTML
   html = html.replace("{{dynamicReadoutTables}}", dynamicReadoutTables);
 
+  // Send the populated HTML as response
   res.send(html);
 });
 
+// Export the router for use in main app
 module.exports = router;

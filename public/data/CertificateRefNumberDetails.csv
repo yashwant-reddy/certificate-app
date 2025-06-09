@@ -1,0 +1,4 @@
+timestamp,certificateRefNo,workOrderNo,operator,acReg,typeOfAC,dateOfDumping,dataReceivedFrom,fdrPnSn,dateOfFlight,flightSector,natureOfReadout,lflRefNo,noOfParametersRecorded,noOfParametersSubmitted
+2025-06-09T11:12:37.730Z,1/2025,,Saurya Airlines,9N-ANM,CRJ 200,,,2100-4043-00;000590642,,,,SFO/CRJ 200/ 2100-4043-00,128,78
+2025-06-09T11:17:53.436Z,2,,Saurya Airlines,9N-ANM,CRJ 200,,,2100-4043-00;000590642,,,,SFO/CRJ 200/ 2100-4043-00,128,78
+2025-06-09T11:18:48.207Z,3,,Falcon Aviation,A6-FLE,BELL Helicopter 412 EP,,,2316-1203-00;445700,,,,SFO/Bell 412/FA2316,,

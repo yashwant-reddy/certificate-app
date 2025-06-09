@@ -153,9 +153,14 @@ router.get('/', async (req, res) => {
   // Define path to HTML template
   const templatePath = path.join(__dirname, '..', 'templates', 'template.html');
 
-  // URL to fetch aircraft registration metadata JSON from S3
-  const aircraftJsonUrl =
-    'https://csv-json-pipeline-01.s3.ap-south-1.amazonaws.com/data/Operator+Info.json';
+  // Absolute path to the JSON file
+  const jsonFilePath = path.join(
+    __dirname,
+    '..',
+    'public',
+    'data',
+    'Operator Info.json'
+  );
 
   // Read the HTML template
   let html = fs.readFileSync(templatePath, 'utf-8');
@@ -181,15 +186,14 @@ router.get('/', async (req, res) => {
     .replace('{{signature2}}', signature2URI)
     .replace('{{logo}}', logoURI);
 
-  // Fetch aircraft data from S3 JSON
+  // Read and parse JSON
   let acRegDropdownData;
   try {
-    const response = await fetch(aircraftJsonUrl);
-    if (!response.ok) throw new Error('Failed to fetch aircraft data from S3');
-    acRegDropdownData = await response.json();
+    const fileContent = fs.readFileSync(jsonFilePath, 'utf-8');
+    acRegDropdownData = JSON.parse(fileContent);
   } catch (err) {
-    console.error('Error fetching aircraft data:', err);
-    return res.status(500).send('Error fetching aircraft data');
+    console.error('Error reading aircraft data from local file:', err);
+    return res.status(500).send('Error reading aircraft data');
   }
 
   const acRegKey = acReg;

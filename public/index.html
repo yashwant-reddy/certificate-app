@@ -382,12 +382,10 @@
 
       window.addEventListener('DOMContentLoaded', async () => {
         try {
-          const res = await fetch(
-            'https://csv-json-pipeline-01.s3.ap-south-1.amazonaws.com/data/Operator+Info.json'
-          );
+          const res = await fetch('/data/Operator Info.json');
           if (!res.ok) throw new Error('Failed to load aircraft data.');
 
-          const jsonData = await res.json(); // New format: object with acReg keys
+          const jsonData = await res.json();
           aircraftData = {};
 
           for (const acReg in jsonData) {
@@ -397,11 +395,9 @@
 
               for (const key in entry) {
                 let value = entry[key];
-
                 if (typeof value === 'string') {
                   value = value.replace(/^,+|,+$/g, '').trim();
                 }
-
                 cleanedEntry[key] = value;
               }
 

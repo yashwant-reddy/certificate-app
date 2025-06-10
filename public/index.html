@@ -186,19 +186,13 @@
       <div class="readout-container">
         <h1>Readout Report Form</h1>
         <form id="htmlForm" action="/preview" method="GET">
-          <!-- Work Order and Operator -->
-          <label for="workOrderNo">Work Order No:</label>
-          <input type="text" id="workOrderNo" name="workOrderNo" />
-
-          <label for="operator">Operator:</label>
-          <input type="text" id="operator" name="operator" />
-
           <!-- A/C Reg input and dropdown container -->
           <label for="acReg">A/C Reg:</label>
           <input
             type="text"
             id="acReg"
             name="acReg"
+            required
             onfocus="showAcRegDropdown()"
             onblur="hideAcRegDropdown()"
             autocomplete="off"
@@ -218,6 +212,13 @@
               z-index: 1000;
             "
           ></div>
+
+          <!-- Work Order and Operator -->
+          <label for="workOrderNo">Work Order No:</label>
+          <input type="text" id="workOrderNo" name="workOrderNo" />
+
+          <label for="operator">Operator:</label>
+          <input type="text" id="operator" name="operator" />
 
           <!-- Auto-filled but editable fields -->
           <label for="typeOfAC">Type of A/C:</label>
@@ -261,10 +262,12 @@
             name="noOfParametersSubmitted"
           />
 
-          <button type="submit">Generate HTML Preview</button>
+          <button type="submit" style="display: none">
+            Generate HTML Preview
+          </button>
         </form>
       </div>
-      <div class="file-container">
+      <div class="file-container" style="display: none">
         <h1>Upload Multiple CSV Files</h1>
         <form id="uploadForm" enctype="multipart/form-data">
           <label for="files">Select CSV Files:</label>
@@ -295,91 +298,23 @@
 
     <!-- Script to auto-fill based on A/C Reg -->
     <script>
-      document
-        .getElementById('uploadForm')
-        .addEventListener('submit', async function (e) {
-          e.preventDefault();
-
-          const form = e.target;
-          const fileInput = document.getElementById('files');
-
-          if (!fileInput.files.length) {
-            alert('Please select at least one CSV file to upload.');
-            return;
-          }
-
-          const formData = new FormData(form);
-
-          try {
-            const res = await fetch('/upload', {
-              method: 'POST',
-              body: formData,
-            });
-
-            if (!res.ok) throw new Error('Upload failed');
-
-            const responseText = await res.text();
-            alert('CSV files uploaded successfully.');
-          } catch (err) {
-            alert('Upload error: ' + err.message);
-          }
-        });
-
-      document
-        .getElementById('htmlForm')
-        .addEventListener('submit', async function (e) {
-          e.preventDefault();
-
-          const form = e.target;
-          const formData = new FormData(form);
-          const params = new URLSearchParams(formData);
-
-          const generateButton = form.querySelector("button[type='submit']");
-          generateButton.disabled = true;
-          generateButton.style.backgroundColor = '#999'; // Grey color when disabled
-          generateButton.textContent = 'Generating...';
-
-          try {
-            const res = await fetch('/preview?' + params.toString(), {
-              method: 'GET',
-            });
-
-            const contentType = res.headers.get('content-type');
-
-            if (!res.ok) {
-              const errorText =
-                contentType && contentType.includes('application/json')
-                  ? JSON.stringify(await res.json())
-                  : await res.text();
-              alert(errorText || 'Preview failed');
-
-              // Re-enable the button and restore appearance
-              generateButton.disabled = false;
-              generateButton.style.backgroundColor = '#0073e6';
-              generateButton.textContent = 'Generate HTML Preview';
-              return;
-            }
-
-            const htmlContent = await res.text();
-
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const previewUrl = URL.createObjectURL(blob);
-            window.open(previewUrl, '_blank');
-
-            generateButton.textContent = 'Generated ✔️';
-          } catch (err) {
-            alert('Network error: ' + err.message);
-
-            // Re-enable the button and restore appearance
-            generateButton.disabled = false;
-            generateButton.style.backgroundColor = '#0073e6';
-            generateButton.textContent = 'Generate HTML Preview';
-          }
-        });
-
       let aircraftData = {};
       let allAcRegOptions = [];
 
+      // Elements
+      const acRegInput = document.getElementById('acReg');
+      const fileContainer = document.querySelector('.file-container');
+      const previewButton = document.querySelector(
+        '#htmlForm button[type="submit"]'
+      );
+      const fileInput = document.getElementById('files');
+      const fileList = document.getElementById('file-list');
+
+      // Initial UI state
+      fileContainer.style.display = 'none';
+      previewButton.style.display = 'none';
+
+      // Load aircraft data for A/C Reg dropdown
       window.addEventListener('DOMContentLoaded', async () => {
         try {
           const res = await fetch('/data/Operator Info.json');
@@ -406,13 +341,26 @@
           }
 
           allAcRegOptions = Object.keys(aircraftData);
+          handleAcRegChange(); // Check A/C Reg on load
         } catch (error) {
-          alert('Error loading aircraft data: ' + error.message);
+          alert('Error loading aircraft data');
         }
       });
 
-      // Custom dropdown logic for A/C Reg input
-      const acRegInput = document.getElementById('acReg');
+      // Update visibility based on A/C Reg input
+      function handleAcRegChange() {
+        const acRegValue = acRegInput.value.trim();
+        if (acRegValue) {
+          fileContainer.style.display = 'block';
+        } else {
+          fileContainer.style.display = 'none';
+          previewButton.style.display = 'none';
+        }
+      }
+
+      acRegInput.addEventListener('input', handleAcRegChange);
+
+      // Custom A/C Reg dropdown logic
       const acRegDropdown = document.getElementById('acRegDropdown');
 
       function showAcRegDropdown() {
@@ -445,27 +393,21 @@
         const filter = acRegInput.value.toUpperCase();
         acRegDropdown.innerHTML = '';
 
-        if (!filter) {
-          allAcRegOptions.forEach((reg) => {
+        const filtered = allAcRegOptions.filter((reg) =>
+          reg.toUpperCase().includes(filter)
+        );
+
+        if (filtered.length === 0) {
+          const div = document.createElement('div');
+          div.textContent = 'No matches found';
+          div.style.color = '#999';
+          div.style.padding = '5px 10px';
+          acRegDropdown.appendChild(div);
+        } else {
+          filtered.forEach((reg) => {
             const div = createDropdownItem(reg);
             acRegDropdown.appendChild(div);
           });
-        } else {
-          const filtered = allAcRegOptions.filter((reg) =>
-            reg.toUpperCase().includes(filter)
-          );
-          if (filtered.length === 0) {
-            const div = document.createElement('div');
-            div.textContent = 'No matches found';
-            div.style.color = '#999';
-            div.style.padding = '5px 10px';
-            acRegDropdown.appendChild(div);
-          } else {
-            filtered.forEach((reg) => {
-              const div = createDropdownItem(reg);
-              acRegDropdown.appendChild(div);
-            });
-          }
         }
       }
 
@@ -484,85 +426,118 @@
         acRegInput.value = reg;
         updateAcDetails();
         acRegDropdown.style.display = 'none';
+        handleAcRegChange(); // Trigger fileContainer check
       }
 
       acRegInput.addEventListener('input', filterAcRegDropdown);
       acRegInput.addEventListener('focus', showAcRegDropdown);
       acRegInput.addEventListener('blur', hideAcRegDropdown);
 
-      // Update form fields based on selected aircraft registration
+      // Autofill fields
       function updateAcDetails() {
         const acReg = acRegInput.value;
-        const typeOfAC = document.getElementById('typeOfAC');
-        const fdrPnSn = document.getElementById('fdrPnSn');
-        const operator = document.getElementById('operator');
-        const lflRefNo = document.getElementById('lflRefNo');
-        const noOfParametersRecorded = document.getElementById(
-          'noOfParametersRecorded'
-        );
-        const noOfParametersSubmitted = document.getElementById(
-          'noOfParametersSubmitted'
-        );
+        const data = aircraftData[acReg] || {};
 
-        const data = aircraftData[acReg];
-
-        if (data) {
-          typeOfAC.value = data['Aircraft type'] || '';
-          operator.value = data['Operator'] || '';
-          fdrPnSn.value = `${data['Part Number'] || ''};${
-            data['Serial Number'] || ''
-          }`;
-          lflRefNo.value = data['LFL Refrence NO'] || '';
-          noOfParametersRecorded.value = data['No of Parameter recorded'] ?? '';
-          noOfParametersSubmitted.value =
-            data['No of Parameter submitted for Evaluation'] ?? '';
-        } else {
-          typeOfAC.value = '';
-          operator.value = '';
-          fdrPnSn.value = '';
-          lflRefNo.value = '';
-          noOfParametersRecorded.value = '';
-          noOfParametersSubmitted.value = '';
-        }
+        document.getElementById('typeOfAC').value = data['Aircraft type'] || '';
+        document.getElementById('operator').value = data['Operator'] || '';
+        document.getElementById('fdrPnSn').value =
+          (data['Part Number'] || '') + ';' + (data['Serial Number'] || '');
+        document.getElementById('lflRefNo').value =
+          data['LFL Refrence NO'] || '';
+        document.getElementById('noOfParametersRecorded').value =
+          data['No of Parameter recorded'] || '';
+        document.getElementById('noOfParametersSubmitted').value =
+          data['No of Parameter submitted for Evaluation'] || '';
       }
 
-      // Display selected file list
-      const fileInput = document.getElementById('files');
-      const fileList = document.getElementById('file-list');
-
+      // Toggle preview button based on file input
       fileInput.addEventListener('change', () => {
         fileList.innerHTML = '';
         Array.from(fileInput.files).forEach((file) => {
           const li = document.createElement('li');
-          li.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(
-            1
-          )} KB)`;
+          li.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
           fileList.appendChild(li);
         });
+        previewButton.style.display =
+          fileInput.files.length > 0 ? 'block' : 'none';
       });
 
-      // Clear uploads
+      // Clear uploaded files
       function clearUploads() {
         if (
           confirm('Are you sure you want to delete all uploaded report files?')
         ) {
-          fetch('/clear-uploads', {
-            method: 'POST',
-          })
+          fetch('/clear-uploads', { method: 'POST' })
             .then((response) => {
               if (!response.ok) throw new Error('Failed to clear uploads');
               return response.text();
             })
-            .then((responseText) => {
+            .then(() => {
               fileInput.value = '';
               fileList.innerHTML = '';
+              previewButton.style.display = 'none';
               alert('Uploaded reports cleared successfully.');
             })
-            .catch((err) => {
-              alert('Error clearing uploads: ' + err.message);
+            .catch(() => {
+              alert('Error clearing uploads.');
             });
         }
       }
+
+      // Upload form submission
+      document
+        .getElementById('uploadForm')
+        .addEventListener('submit', async function (e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          try {
+            const res = await fetch('/upload', {
+              method: 'POST',
+              body: formData,
+            });
+            if (!res.ok) throw new Error('Upload failed');
+            alert('CSV files uploaded successfully.');
+          } catch (err) {
+            alert('Upload error.');
+          }
+        });
+
+      // Preview form submission
+      document
+        .getElementById('htmlForm')
+        .addEventListener('submit', async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(this);
+          const params = new URLSearchParams(formData);
+          const button = previewButton;
+
+          button.disabled = true;
+          button.style.backgroundColor = '#999';
+          button.textContent = 'Generating...';
+
+          try {
+            const res = await fetch('/preview?' + params.toString(), {
+              method: 'GET',
+            });
+
+            if (!res.ok) {
+              alert('Preview failed');
+            } else {
+              const htmlContent = await res.text();
+              const blob = new Blob([htmlContent], { type: 'text/html' });
+              const previewUrl = URL.createObjectURL(blob);
+              window.open(previewUrl, '_blank');
+              button.textContent = 'Generated ✔️';
+            }
+          } catch (err) {
+            alert('Network error');
+          } finally {
+            button.disabled = false;
+            button.style.backgroundColor = '#0073e6';
+            button.textContent = 'Generate HTML Preview';
+          }
+        });
     </script>
   </body>
 </html>

@@ -45,11 +45,22 @@ router.get('/', async (req, res) => {
     noOfParametersSubmitted: req.query.noOfParametersSubmitted,
   };
 
-  // Write certificate data to CSV and get counter
-  const counterValue = writeCertificateData(formData);
+  // Handle CSV write with graceful error on locked file
+  let counterValue;
+  try {
+    counterValue = writeCertificateData(formData);
+  } catch (err) {
+    console.error('Error writing to CSV:', err.message);
+    return res
+      .status(500)
+      .send(
+        'The certificate data could not be saved. Please ensure the CSV file is not open.'
+      );
+  }
+
   const certificateRefNo = `${counterValue}/${currentYear}`;
 
-  // Load signature and logo images as base64 URIs
+  // Load signature and logo images
   const signature1Path = path.join(
     __dirname,
     '..',
@@ -94,7 +105,7 @@ router.get('/', async (req, res) => {
   const templatePath = path.join(__dirname, '..', 'templates', 'template.html');
   let html = fs.readFileSync(templatePath, 'utf-8');
 
-  // Replace placeholders for form data & certificate number
+  // Replace template placeholders
   html = html
     .replace('{{workOrderNo}}', formData.workOrderNo || 'Update')
     .replace(/{{operator}}/g, formData.operator || 'Update')
@@ -121,7 +132,7 @@ router.get('/', async (req, res) => {
     .replace('{{signature2}}', signature2URI)
     .replace('{{logo}}', logoURI);
 
-  // --- Load aircraft registration data from operator info.json (independent from certificate data) ---
+  // Load operator info (aircraft metadata) from Operator Info.json
   const operatorInfoPath = path.join(
     __dirname,
     '..',
@@ -137,7 +148,7 @@ router.get('/', async (req, res) => {
     console.error('Error loading operator info data:', error);
   }
 
-  // Lookup acReg details
+  // Fill in aircraft details based on acReg
   const acRecord = operatorData[formData.acReg] || {};
   const partNumber = safeValue(acRecord['Part Number']);
   const serialNumber = safeValue(acRecord['Serial Number']);
@@ -151,8 +162,7 @@ router.get('/', async (req, res) => {
     .replace('{{noOfParams}}', noOfParams)
     .replace('{{description}}', `${partNumber} / ${serialNumber}`);
 
-  // --- The rest: building dynamic readout tables from manifest.json and Readout Report JSON files ---
-
+  // Load manifest and report tables
   let ReportSequenceArray = [];
   try {
     const manifestPath = path.join(__dirname, '..', 'uploads', 'manifest.json');
@@ -225,17 +235,17 @@ router.get('/', async (req, res) => {
             : '';
 
         return `
-      <tr>
-        <td>${sNumber++}</td>
-        <td contenteditable="true">${cleanedKey}</td>
-        <td contenteditable="true">${parameterType}</td>
-        <td contenteditable="true">${isAllSame || usePattern ? '' : '✔'}</td>
-        <td contenteditable="true">${isAllSame || usePattern ? '✔' : ''}</td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true">${remark}</td>
-      </tr>
-    `;
+        <tr>
+          <td>${sNumber++}</td>
+          <td contenteditable="true">${cleanedKey}</td>
+          <td contenteditable="true">${parameterType}</td>
+          <td contenteditable="true">${isAllSame || usePattern ? '' : '✔'}</td>
+          <td contenteditable="true">${isAllSame || usePattern ? '✔' : ''}</td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true">${remark}</td>
+        </tr>
+      `;
       })
       .join('');
 
@@ -248,7 +258,6 @@ router.get('/', async (req, res) => {
   }
 
   html = html.replace('{{dynamicReadoutTables}}', dynamicReadoutTables);
-
   res.send(html);
 });
 

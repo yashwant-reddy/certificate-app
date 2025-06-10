@@ -5,23 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Flight Report Preview</title>
     <style>
+      /* Base style */
       body {
         font-family: Arial, sans-serif;
         margin: 2cm 1cm;
         padding: 0.5cm;
         font-size: 10px;
-        /* Reduced font size for better page fitting */
       }
 
       h1 {
         text-align: center;
         color: #333;
         font-size: 14px;
-        /* Reduced font size */
         margin-bottom: 10px;
       }
 
-      /* Container for sections */
       .report-container {
         display: flex;
         flex-direction: column;
@@ -30,7 +28,6 @@
         padding: 10px;
       }
 
-      /* Section 1 - Left side */
       .section-left,
       .section-right {
         display: flex;
@@ -53,7 +50,6 @@
         width: 140px;
         margin-right: 5px;
         font-size: 10px;
-        /* Adjust section title size */
       }
 
       .section-three-title {
@@ -61,14 +57,12 @@
         width: 100%;
         margin-right: 5px;
         font-size: 10px;
-        /* Adjust section title size */
       }
 
       .section-value {
         margin-left: 5px;
         flex-grow: 1;
         font-size: 10px;
-        /* Adjust section value size */
       }
 
       .section {
@@ -82,7 +76,6 @@
         width: 100%;
       }
 
-      /* Section 4: Table with logos and text */
       .section-four {
         width: 100%;
         margin-top: 10px;
@@ -93,7 +86,6 @@
         border-collapse: collapse;
         margin-top: 5px;
         font-size: 12px;
-        /* Reduced font size for table */
       }
 
       td {
@@ -105,7 +97,6 @@
       .logo-left img,
       .logo-right img {
         width: 40%;
-        /* Adjust logos to be smaller */
       }
 
       .certificate-row td {
@@ -150,14 +141,11 @@
         line-height: 1.4;
       }
 
-      /* Styling for table headers */
       th {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
         background-color: #d3d3d3;
-        /* Light grey background */
         border: 1px solid #000;
-        /* Border for the header cells */
         font-weight: bold;
       }
 
@@ -170,23 +158,35 @@
         text-align: center;
       }
 
-      /* Prevent page URL, date, and page number from printing */
+      /* Page setup */
+      @page:first {
+        margin: 10mm 10mm 15mm 10mm;
+      }
+
       @page {
-        margin: 10px 30px;
         size: A4;
-        /* Set to A4 for standard PDF size */
+        margin: 1.5cm 1.5cm; /* Smaller top/bottom (0.5cm), side margins 1cm */
       }
 
       @media print {
         body {
+          margin: 0;
+          padding: 0;
           visibility: visible;
+          font-size: 9pt;
         }
 
         .report-container {
+          padding: 0;
+          margin: 0;
           page-break-inside: avoid;
         }
 
-        /* Apply CSS adjustments to fit content to one page */
+        .page-two-box {
+          padding: 10px 10px;
+          margin: 10px 0 0 0;
+        }
+
         .no-print {
           display: none !important;
         }
@@ -194,22 +194,15 @@
         table,
         td {
           font-size: 8px;
-          /* Reduce font size for table cells */
         }
 
         h1 {
           font-size: 14px;
-          /* Adjust heading size */
         }
 
-        .section-title {
-          font-size: 9px;
-          /* Adjust section title font size */
-        }
-
+        .section-title,
         .section-value {
           font-size: 9px;
-          /* Adjust section value font size */
         }
 
         .wrapper {
@@ -217,7 +210,6 @@
           justify-content: space-between;
         }
 
-        /* Adjust layout to reduce vertical space */
         .section-left,
         .section-right {
           width: 48%;
@@ -237,10 +229,8 @@
           padding-left: 10px;
           padding-right: 10px;
           font-size: 8px;
-          /* Reduced font size for remarks and certifications */
         }
 
-        /* Ensure no breaks in the table */
         .no-break {
           page-break-inside: avoid !important;
         }
@@ -559,6 +549,16 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Optional reminder for user before print -->
+    <div class="no-print" style="margin: 30px; font-size: 0.9rem; color: #333">
+      <strong>Before printing:</strong>
+      <ul>
+        <li>Uncheck "Headers and footers" in the print dialog</li>
+        <li>Enable "Background graphics" for logo and color display</li>
+        <li>Only page numbers will appear at the footer</li>
+      </ul>
     </div>
   </body>
 </html>

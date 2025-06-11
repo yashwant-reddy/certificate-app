@@ -1,4 +1,3 @@
-// Import necessary modules and utilities
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -14,49 +13,50 @@ const {
   checkSpecialPattern,
 } = require('../utils/significanceCheck');
 
-// Import AWS SDK and DynamoDB client libraries
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const {
-  DynamoDBDocumentClient,
-  UpdateCommand,
-} = require('@aws-sdk/lib-dynamodb');
+const { writeCertificateData } = require('../utils/writeCertificateDetails');
 
 const router = express.Router();
 require('dotenv').config();
 
-// Create DynamoDB client (v3)
-const client = new DynamoDBClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
-const dynamoDB = DynamoDBDocumentClient.from(client);
-
 router.get('/', async (req, res) => {
-  // 1. Increment the counter in DynamoDB and get updated count
-  const timestamp = new Date().toISOString();
-  const params = {
-    TableName: process.env.DYNAMO_TABLE,
-    Key: { id: 'mainCounter' },
-    UpdateExpression: `SET #count = if_not_exists(#count, :zero) + :incr, #ts = :ts`,
-    ExpressionAttributeNames: { '#count': 'count', '#ts': 'timestamp' },
-    ExpressionAttributeValues: { ':zero': 0, ':incr': 1, ':ts': timestamp },
-    ReturnValues: 'ALL_NEW',
+  const date = new Date();
+  const currentYear = date.getFullYear();
+  const formattedDate = date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const formData = {
+    workOrderNo: req.query.workOrderNo,
+    operator: req.query.operator,
+    acReg: req.query.acReg,
+    typeOfAC: req.query.typeOfAC,
+    dateOfDumping: req.query.dateOfDumping,
+    dataReceivedFrom: req.query.dataReceivedFrom,
+    fdrPnSn: req.query.fdrPnSn,
+    dateOfFlight: req.query.dateOfFlight,
+    flightSector: req.query.flightSector,
+    natureOfReadout: req.query.natureOfReadout,
+    lflRefNo: req.query.lflRefNo,
+    noOfParametersRecorded: req.query.noOfParametersRecorded,
+    noOfParametersSubmitted: req.query.noOfParametersSubmitted,
   };
 
   let counterValue;
   try {
-    const updateResult = await dynamoDB.send(new UpdateCommand(params));
-    counterValue = updateResult.Attributes.count;
-    console.log('DynamoDB counter incremented to:', counterValue);
+    counterValue = writeCertificateData(formData);
   } catch (err) {
-    console.error('Error incrementing DynamoDB counter:', err);
-    return res.status(500).send('Failed to increment preview counter.');
+    console.error('Error writing to CSV:', err.message);
+    return res
+      .status(500)
+      .send(
+        'The certificate data could not be saved. Please ensure the CSV file is not open.'
+      );
   }
 
-  // Handle images - Define paths to image files
+  const certificateRefNo = `${counterValue}/${currentYear}`;
+
   const signature1Path = path.join(
     __dirname,
     '..',
@@ -79,133 +79,73 @@ router.get('/', async (req, res) => {
     'nestlogo.svg'
   );
 
-  console.log('Image paths:');
-  console.log('Signature1:', signature1Path);
-  console.log('Signature2:', signature2Path);
-  console.log('Logo:', logoPath);
+  let signature1URI = '',
+    signature2URI = '',
+    logoURI = '';
 
-  // Check if files exist
-  console.log('File existence check:');
-  console.log('Signature1 exists:', fs.existsSync(signature1Path));
-  console.log('Signature2 exists:', fs.existsSync(signature2Path));
-  console.log('Logo exists:', fs.existsSync(logoPath));
-
-  let signature1URI = '';
-  let signature2URI = '';
-  let logoURI = '';
-
-  // Read and encode image files to Base64 URIs
   try {
     if (fs.existsSync(signature1Path)) {
-      signature1URI = `data:image/png;base64,${fs.readFileSync(
-        signature1Path,
-        'base64'
-      )}`;
-      console.log('Signature1 loaded successfully');
+      signature1URI = `data:image/png;base64,${fs.readFileSync(signature1Path, 'base64')}`;
     }
     if (fs.existsSync(signature2Path)) {
-      signature2URI = `data:image/png;base64,${fs.readFileSync(
-        signature2Path,
-        'base64'
-      )}`;
-      console.log('Signature2 loaded successfully');
+      signature2URI = `data:image/png;base64,${fs.readFileSync(signature2Path, 'base64')}`;
     }
     if (fs.existsSync(logoPath)) {
-      logoURI = `data:image/svg+xml;base64,${fs.readFileSync(
-        logoPath,
-        'base64'
-      )}`;
-      console.log('Logo loaded successfully');
+      logoURI = `data:image/svg+xml;base64,${fs.readFileSync(logoPath, 'base64')}`;
     }
   } catch (err) {
     console.error('Error reading image files:', err);
   }
 
-  const date = new Date();
-  const currentYear = date.getFullYear();
-  const formattedDate = date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-  console.log(formattedDate);
-  // Assuming you already have counterValue from DynamoDB or elsewhere
-
-  const certificateRefNo = `${counterValue}/${currentYear}`;
-
-  // Extract query parameters from request URL
-  const {
-    workOrderNo,
-    operator,
-    acReg,
-    typeOfAC,
-    dateOfDumping,
-    dataReceivedFrom,
-    fdrPnSn,
-    dateOfFlight,
-    flightSector,
-    natureOfReadout,
-    lflRefNo,
-    noOfParametersRecorded,
-    noOfParametersSubmitted,
-  } = req.query;
-
-  // Define path to HTML template
   const templatePath = path.join(__dirname, '..', 'templates', 'template.html');
-
-  // URL to fetch aircraft registration metadata JSON from S3
-  const aircraftJsonUrl =
-    'https://csv-json-pipeline-01.s3.ap-south-1.amazonaws.com/data/Operator+Info.json';
-
-  // Read the HTML template
   let html = fs.readFileSync(templatePath, 'utf-8');
 
-  // Replace template placeholders with query parameters and image URIs
   html = html
-    .replace('{{workOrderNo}}', workOrderNo || 'Update')
-    .replace(/{{operator}}/g, operator || 'Update')
-    .replace(/{{acReg}}/g, acReg || 'Update')
-    .replace(/{{typeOfAC}}/g, typeOfAC || 'Update')
-    .replace('{{dateOfDumping}}', dateOfDumping || 'Update')
-    .replace('{{dataReceivedFrom}}', dataReceivedFrom || 'Update')
-    .replace('{{fdrPnSn}}', fdrPnSn || 'Update')
-    .replace('{{dateOfFlight}}', dateOfFlight || 'Update')
-    .replace('{{flightSector}}', flightSector || 'Update')
-    .replace('{{natureOfReadout}}', natureOfReadout || 'Update')
-    .replace('{{lflRefNo}}', lflRefNo || 'Update')
-    .replace('{{noOfParametersRecorded}}', noOfParametersRecorded || 'Update')
-    .replace('{{noOfParametersSubmitted}}', noOfParametersSubmitted || 'Update')
+    .replace('{{workOrderNo}}', formData.workOrderNo || 'Update')
+    .replace(/{{operator}}/g, formData.operator || 'Update')
+    .replace(/{{acReg}}/g, formData.acReg || 'Update')
+    .replace(/{{typeOfAC}}/g, formData.typeOfAC || 'Update')
+    .replace('{{dateOfDumping}}', formData.dateOfDumping || 'Update')
+    .replace('{{dataReceivedFrom}}', formData.dataReceivedFrom || 'Update')
+    .replace('{{fdrPnSn}}', formData.fdrPnSn || 'Update')
+    .replace('{{dateOfFlight}}', formData.dateOfFlight || 'Update')
+    .replace('{{flightSector}}', formData.flightSector || 'Update')
+    .replace('{{natureOfReadout}}', formData.natureOfReadout || 'Update')
+    .replace('{{lflRefNo}}', formData.lflRefNo || 'Update')
+    .replace(
+      '{{noOfParametersRecorded}}',
+      formData.noOfParametersRecorded || 'Update'
+    )
+    .replace(
+      '{{noOfParametersSubmitted}}',
+      formData.noOfParametersSubmitted || 'Update'
+    )
     .replace('{{certificateRefNo}}', certificateRefNo)
     .replace('{{currentDate}}', formattedDate)
     .replace('{{signature1}}', signature1URI)
     .replace('{{signature2}}', signature2URI)
     .replace('{{logo}}', logoURI);
 
-  // Fetch aircraft data from S3 JSON
-  let acRegDropdownData;
+  const operatorInfoPath = path.join(
+    __dirname,
+    '..',
+    'public',
+    'data',
+    'operator info.json'
+  );
+  let operatorData = {};
   try {
-    const response = await fetch(aircraftJsonUrl);
-    if (!response.ok) throw new Error('Failed to fetch aircraft data from S3');
-    acRegDropdownData = await response.json();
-  } catch (err) {
-    console.error('Error fetching aircraft data:', err);
-    return res.status(500).send('Error fetching aircraft data');
+    const rawOperatorData = fs.readFileSync(operatorInfoPath, 'utf-8');
+    operatorData = JSON.parse(rawOperatorData);
+  } catch (error) {
+    console.error('Error loading operator info data:', error);
   }
 
-  const acRegKey = acReg;
-  const record = acRegDropdownData[acRegKey];
-  if (!record) {
-    return res.status(404).json({
-      error: `No record found for Aircraft Reg: ${acRegKey}`,
-    });
-  }
-
-  // Utility function to safely return value or fallback
-
-  const partNumber = safeValue(record['Part Number']);
-  const serialNumber = safeValue(record['Serial Number']);
+  const acRecord = operatorData[formData.acReg] || {};
+  const partNumber = safeValue(acRecord['Part Number']);
+  const serialNumber = safeValue(acRecord['Serial Number']);
   const noOfParams = safeValue(
-    record['No of Parameter submitted for Evaluation']
+    acRecord['No of Parameter submitted for Evaluation']
   );
 
   html = html
@@ -214,38 +154,51 @@ router.get('/', async (req, res) => {
     .replace('{{noOfParams}}', noOfParams)
     .replace('{{description}}', `${partNumber} / ${serialNumber}`);
 
-  // Read manifest.json to get uploaded report numbers
   let ReportSequenceArray = [];
   try {
     const manifestPath = path.join(__dirname, '..', 'uploads', 'manifest.json');
-    ReportSequenceArray = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-    console.log('Reports to show:', ReportSequenceArray);
+    if (fs.existsSync(manifestPath)) {
+      ReportSequenceArray = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    } else {
+      console.warn('⚠️ No manifest.json found');
+    }
   } catch (err) {
     console.error('Error reading manifest.json:', err);
   }
 
-  // Helper: Clean and format keys (remove units, underscores)
-
-  // Helper: Classify field types for each row of data
-
-  // Generate dynamic readout report tables
   let dynamicReadoutTables = '';
   let sNumber = 1;
 
-  for (const i of ReportSequenceArray) {
-    const jsonPath = path.join(
-      __dirname,
-      '..',
-      'uploads',
-      `Readout Report ${i}.json`
-    );
-    if (!fs.existsSync(jsonPath)) continue;
+  for (const baseName of ReportSequenceArray) {
+    const jsonFileName = `${baseName}.json`;
+    const jsonPath = path.join(__dirname, '..', 'uploads', jsonFileName);
 
-    const reportData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-    const report = reportData.find((f) => f.file === `Readout Report ${i}.csv`);
-    const content = report?.[`Readout Report ${i} Content`] || [];
+    if (!fs.existsSync(jsonPath)) {
+      console.warn(`Skipped missing file: ${jsonFileName}`);
+      continue;
+    }
 
-    if (content.length === 0) continue;
+    let reportData;
+    try {
+      reportData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+    } catch (err) {
+      console.error(`Error parsing JSON for ${jsonFileName}:`, err);
+      continue;
+    }
+
+    const report = reportData.find((f) => f.file === `${baseName}.csv`);
+    if (!report) {
+      console.warn(`No matching report entry for ${baseName}.csv`);
+      continue;
+    }
+
+    const content = report?.[`${baseName} Content`] || [];
+    if (content.length === 0) {
+      console.warn(`No content found for ${baseName}`);
+      continue;
+    }
+
+    console.log(`Processing: ${baseName}.csv`);
 
     const rawKeys = Object.keys(content[0]);
     const cleanedKeys = cleanAndFilterAndFormatKeys(rawKeys);
@@ -278,19 +231,6 @@ router.get('/', async (req, res) => {
       };
     }
 
-    // Save fieldTypes JSON for debugging if you want (optional)
-    const fieldTypesPath = path.join(
-      __dirname,
-      '..',
-      'uploads',
-      `fieldTypes_report${i}.json`
-    );
-    fs.writeFileSync(
-      fieldTypesPath,
-      JSON.stringify({ overallFieldTypes }, null, 2),
-      'utf-8'
-    );
-
     const tableRows = rawKeys
       .map((rawKey, index) => {
         const cleanedKey = cleanedKeys[index];
@@ -301,47 +241,36 @@ router.get('/', async (req, res) => {
         const { isAllSame, sameValue } = isAllSameValue(values);
         const { usePattern, patternValue } = checkSpecialPattern(values);
 
-        if (usePattern) {
-          console.log(
-            `[Pattern Detected] File: Readout Report ${i}.json | Key: "${cleanedKey}" | Pattern Value: "${patternValue}"`
-          );
-        }
-
         const remark =
           isAllSame || usePattern
             ? `Always "${isAllSame ? sameValue : patternValue}"`
             : '';
 
         return `
-      <tr>
-        <td>${sNumber++}</td>
-        <td contenteditable="true">${cleanedKey}</td>
-         <td contenteditable="true">${parameterType}</td>
-        <td contenteditable="true">${isAllSame || usePattern ? '' : '✔'}</td>
-        <td contenteditable="true">${isAllSame || usePattern ? '✔' : ''}</td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true"></td>
-        <td contenteditable="true">${remark}</td>
-      </tr>
-    `;
+        <tr>
+          <td>${sNumber++}</td>
+          <td contenteditable="true">${cleanedKey}</td>
+          <td contenteditable="true">${parameterType}</td>
+          <td contenteditable="true">${isAllSame || usePattern ? '' : '✔'}</td>
+          <td contenteditable="true">${isAllSame || usePattern ? '✔' : ''}</td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true">${remark}</td>
+        </tr>
+      `;
       })
       .join('');
 
-    // Append this report’s header and rows to the final HTML
     dynamicReadoutTables += `
       <tr>
-        <td colspan="8" class="readout-header">Readout Report ${i}</td>
+        <td colspan="8" class="readout-header">${baseName}</td>
       </tr>
       ${tableRows}
     `;
   }
 
-  // Inject generated report tables into final HTML
   html = html.replace('{{dynamicReadoutTables}}', dynamicReadoutTables);
-
-  // Send the populated HTML as response
   res.send(html);
 });
 
-// Export the router for use in main app
 module.exports = router;

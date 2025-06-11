@@ -23,43 +23,46 @@ router.post('/', upload.array('files'), async (req, res) => {
     files.map((file) => {
       return new Promise((resolve, reject) => {
         const results = [];
-        const match = file.originalname.match(/\d+/);
-        const reportNumber = match ? parseInt(match[0], 10) : 'Unknown';
+        const originalName = file.originalname;
 
         fs.createReadStream(file.path)
           .pipe(csv())
           .on('data', (data) => results.push(data))
           .on('end', () => {
-            allResults[reportNumber] = results;
+            allResults[originalName] = results;
             if (results.length > 0) {
-              firstObjects[reportNumber] = results[0];
+              firstObjects[originalName] = results[0];
             }
             fs.unlinkSync(file.path); // Clean up temp upload
             resolve();
           })
           .on('error', (err) => {
-            console.error(`Error reading ${file.originalname}:`, err);
+            console.error(`Error reading ${originalName}:`, err);
             reject(err);
           });
       });
     })
   );
 
-  // Clean up Report 1
-  if (allResults[1]) {
-    allResults[1] = removeSubframeIndexFromReport1(allResults[1]);
-    firstObjects[1] = allResults[1][0]; // update first object after cleanup
+  // Step 2: Clean up Report 1 (if named exactly "Readout Report 1.csv" or any variant you define)
+  const targetKey = Object.keys(allResults).find((name) =>
+    name.toLowerCase().includes('readout report 1')
+  );
+
+  if (targetKey) {
+    allResults[targetKey] = removeSubframeIndexFromReport1(
+      allResults[targetKey]
+    );
+    firstObjects[targetKey] = allResults[targetKey][0];
+    console.log('\n✅ Keys in cleaned Report 1:');
+    console.log(Object.keys(allResults[targetKey][0]));
   }
 
-  console.log('\n✅ Keys in cleaned Report 1:');
-  console.log(Object.keys(allResults[1][0]));
-
-  // Normalize keys for comparison (lowercase, trimmed)
+  // Normalize keys
   const normalizeKey = (key) => key.trim().toLowerCase();
-
   const normalizedSubframeIndexKey = normalizeKey('Subframe Index');
 
-  // Step 3: Count key frequency across all first rows (normalized)
+  // Step 3: Count key frequency across all first rows
   const keyFrequency = {};
   Object.values(firstObjects).forEach((obj) => {
     Object.keys(obj).forEach((key) => {
@@ -68,8 +71,7 @@ router.post('/', upload.array('files'), async (req, res) => {
     });
   });
 
-  // Step 4: Build full removal key set (normalized keys)
-  /* eslint-disable no-unused-vars */
+  // Step 4: Determine repeating keys
   const repeatingKeys = new Set(
     Object.entries(keyFrequency)
       .filter(([_, count]) => count > 1)
@@ -82,68 +84,74 @@ router.post('/', upload.array('files'), async (req, res) => {
 
   // Step 5: Filter rows
   const filteredResults = {};
-  for (const [reportNumber, rows] of Object.entries(allResults)) {
-    const num = parseInt(reportNumber, 10);
-
-    filteredResults[reportNumber] = rows.map((row) => {
+  for (const [fileName, rows] of Object.entries(allResults)) {
+    filteredResults[fileName] = rows.map((row) => {
       const filtered = {};
       for (const key in row) {
         const trimmedKey = key.trim();
         const nKey = normalizeKey(trimmedKey);
 
         const shouldRemove =
-          (num === 1 &&
-            (nKey === normalizedSubframeIndexKey ||
-              trimmedKey === 'Subframe Index')) ||
-          (num !== 1 &&
-            (repeatingKeys.has(nKey) || trimmedKey === 'Subframe Index'));
-
+          repeatingKeys.has(nKey) || trimmedKey === 'Subframe Index';
         if (!shouldRemove) {
           filtered[trimmedKey] = row[key];
         }
       }
-
       return filtered;
     });
 
     const originalKeys = new Set(rows.flatMap((r) => Object.keys(r)));
     const removedKeys = [...originalKeys].filter((key) => {
       const nKey = normalizeKey(key);
-      return num === 1
-        ? nKey === normalizedSubframeIndexKey
-        : repeatingKeys.has(nKey);
+      return repeatingKeys.has(nKey);
     });
-    console.log(`\n📄 Report ${reportNumber}: removed keys ->`, removedKeys);
+
+    console.log(`\n📄 ${fileName}: removed keys ->`, removedKeys);
   }
 
-  // Step 6: Write JSON output
-  for (const [reportNumber, rows] of Object.entries(filteredResults)) {
+  // Step 6: Write JSON files with actual filenames
+  for (const [fileName, rows] of Object.entries(filteredResults)) {
+    const baseName = path.parse(fileName).name;
     const outputData = [
       {
-        file: `Readout Report ${reportNumber}.csv`,
-        [`Readout Report ${reportNumber} Content`]: rows,
+        file: fileName,
+        [`${baseName} Content`]: rows,
       },
     ];
 
-    const outputFileName = `Readout Report ${reportNumber}.json`;
+    const outputFileName = `${baseName}.json`;
     const outputPath = path.join(__dirname, '..', 'uploads', outputFileName);
 
     try {
       fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
     } catch (err) {
-      console.error(`Error writing output for Report ${reportNumber}:`, err);
+      console.error(`Error writing output for ${fileName}:`, err);
     }
   }
 
-  // Step 7: Save manifest
-  const uploadedReports = Object.keys(filteredResults)
-    .map((n) => parseInt(n, 10))
-    .filter((n) => !isNaN(n))
-    .sort((a, b) => a - b);
+  // Step 7: Save manifest with base file names (no extension) sorted logically
+  const uploadedBaseNames = Object.keys(filteredResults).map(
+    (name) => path.parse(name).name
+  );
+
+  function logicalSort(a, b) {
+    const extractParts = (filename) => {
+      const match = filename.match(/(\d+)([a-zA-Z]*)/);
+      return match ? [parseInt(match[1]), match[2] || ''] : [0, ''];
+    };
+
+    const [numA, suffixA] = extractParts(a);
+    const [numB, suffixB] = extractParts(b);
+
+    if (numA !== numB) return numA - numB;
+    return suffixA.localeCompare(suffixB);
+  }
+
+  const sortedBaseNames = uploadedBaseNames.sort(logicalSort);
 
   fs.writeFileSync(
     path.join(__dirname, '..', 'uploads', 'manifest.json'),
-    JSON.stringify(uploadedReports, null, 2)
+    JSON.stringify(sortedBaseNames, null, 2)
   );
 
   res.send(

@@ -1,4 +1,3 @@
-// Import modules
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -28,7 +27,6 @@ router.get('/', async (req, res) => {
     day: 'numeric',
   });
 
-  // Extract form data from query
   const formData = {
     workOrderNo: req.query.workOrderNo,
     operator: req.query.operator,
@@ -45,7 +43,6 @@ router.get('/', async (req, res) => {
     noOfParametersSubmitted: req.query.noOfParametersSubmitted,
   };
 
-  // Handle CSV write with graceful error on locked file
   let counterValue;
   try {
     counterValue = writeCertificateData(formData);
@@ -60,7 +57,6 @@ router.get('/', async (req, res) => {
 
   const certificateRefNo = `${counterValue}/${currentYear}`;
 
-  // Load signature and logo images
   const signature1Path = path.join(
     __dirname,
     '..',
@@ -101,11 +97,9 @@ router.get('/', async (req, res) => {
     console.error('Error reading image files:', err);
   }
 
-  // Load HTML template
   const templatePath = path.join(__dirname, '..', 'templates', 'template.html');
   let html = fs.readFileSync(templatePath, 'utf-8');
 
-  // Replace template placeholders
   html = html
     .replace('{{workOrderNo}}', formData.workOrderNo || 'Update')
     .replace(/{{operator}}/g, formData.operator || 'Update')
@@ -132,7 +126,6 @@ router.get('/', async (req, res) => {
     .replace('{{signature2}}', signature2URI)
     .replace('{{logo}}', logoURI);
 
-  // Load operator info (aircraft metadata) from Operator Info.json
   const operatorInfoPath = path.join(
     __dirname,
     '..',
@@ -148,7 +141,6 @@ router.get('/', async (req, res) => {
     console.error('Error loading operator info data:', error);
   }
 
-  // Fill in aircraft details based on acReg
   const acRecord = operatorData[formData.acReg] || {};
   const partNumber = safeValue(acRecord['Part Number']);
   const serialNumber = safeValue(acRecord['Serial Number']);
@@ -162,11 +154,14 @@ router.get('/', async (req, res) => {
     .replace('{{noOfParams}}', noOfParams)
     .replace('{{description}}', `${partNumber} / ${serialNumber}`);
 
-  // Load manifest and report tables
   let ReportSequenceArray = [];
   try {
     const manifestPath = path.join(__dirname, '..', 'uploads', 'manifest.json');
-    ReportSequenceArray = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    if (fs.existsSync(manifestPath)) {
+      ReportSequenceArray = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    } else {
+      console.warn('⚠️ No manifest.json found');
+    }
   } catch (err) {
     console.error('Error reading manifest.json:', err);
   }
@@ -174,19 +169,36 @@ router.get('/', async (req, res) => {
   let dynamicReadoutTables = '';
   let sNumber = 1;
 
-  for (const i of ReportSequenceArray) {
-    const jsonPath = path.join(
-      __dirname,
-      '..',
-      'uploads',
-      `Readout Report ${i}.json`
-    );
-    if (!fs.existsSync(jsonPath)) continue;
+  for (const baseName of ReportSequenceArray) {
+    const jsonFileName = `${baseName}.json`;
+    const jsonPath = path.join(__dirname, '..', 'uploads', jsonFileName);
 
-    const reportData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-    const report = reportData.find((f) => f.file === `Readout Report ${i}.csv`);
-    const content = report?.[`Readout Report ${i} Content`] || [];
-    if (content.length === 0) continue;
+    if (!fs.existsSync(jsonPath)) {
+      console.warn(`Skipped missing file: ${jsonFileName}`);
+      continue;
+    }
+
+    let reportData;
+    try {
+      reportData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+    } catch (err) {
+      console.error(`Error parsing JSON for ${jsonFileName}:`, err);
+      continue;
+    }
+
+    const report = reportData.find((f) => f.file === `${baseName}.csv`);
+    if (!report) {
+      console.warn(`No matching report entry for ${baseName}.csv`);
+      continue;
+    }
+
+    const content = report?.[`${baseName} Content`] || [];
+    if (content.length === 0) {
+      console.warn(`No content found for ${baseName}`);
+      continue;
+    }
+
+    console.log(`Processing: ${baseName}.csv`);
 
     const rawKeys = Object.keys(content[0]);
     const cleanedKeys = cleanAndFilterAndFormatKeys(rawKeys);
@@ -251,7 +263,7 @@ router.get('/', async (req, res) => {
 
     dynamicReadoutTables += `
       <tr>
-        <td colspan="8" class="readout-header">Readout Report ${i}</td>
+        <td colspan="8" class="readout-header">${baseName}</td>
       </tr>
       ${tableRows}
     `;

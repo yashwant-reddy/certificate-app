@@ -158,3 +158,135 @@ npm run lint:fix
 # Format all files using Prettier
 
 npm run format
+
+## Automated Git Pull Script
+
+To automatically pull the latest changes from the `local-storage` branch every time you unlock your PC, use the script in `/scripts/auto-git-pull.bat`.
+
+**Setup:**
+
+1. Open Windows Task Scheduler.
+2. Create a new task with the trigger "On workstation unlock."
+3. Set the action to run the script at: `scripts/auto-git-pull.bat`
+4. (Optional) Check the logs in `scripts/git-pull-log.txt`.
+
+The script will retry up to 3 times and always keep your local code if there's a conflict.
+
+
+
+# Certificate App
+
+A Node.js/Express application with automated browser sync and hot-reload for development.
+
+---
+
+## 🚀 Getting Started
+
+### 1. **Install Dependencies**
+
+```bash
+npm install
+```
+
+### 2. **Development Workflow**
+
+* **Start the development environment (app + browser sync):**
+
+  ```bash
+  npm run dev
+  ```
+
+  This will:
+
+  * Automatically kill any existing dev server processes on ports **3000, 3010, 4000, 3001**
+  * Start the main server (with `nodemon`)
+  * Start BrowserSync (with your custom config)
+
+* **Stop all dev servers manually:**
+
+  ```bash
+  npm run stop
+  ```
+
+* **Start only the production server:**
+
+  ```bash
+  npm start
+  ```
+
+---
+
+## 🔄 Automated Git Pull and Dev Restart (Optional)
+
+To ensure your app always has the latest code and a clean dev environment, you can use the included automation scripts.
+
+### **Automated Workflow**
+
+* When you **log in** or **unlock your computer**, the script:
+
+  1. Stops all running dev servers (using `npm run stop`)
+  2. Pulls the latest code from the `local-storage` branch, always keeping your local changes if there's a merge conflict
+  3. Restarts your development environment (`npm run dev`)
+
+---
+
+### **Setting Up the Automation (Windows)**
+
+1. **Find the scripts:**
+
+   * `scripts/auto-git-pull.bat` (batch script)
+   * `scripts/kill-ports.ps1` (PowerShell helper for port management)
+
+2. **(First time only) Install required npm packages:**
+
+   ```bash
+   npm install --save-dev kill-port concurrently
+   ```
+
+3. **Set up Task Scheduler:**
+
+   * Open **Task Scheduler** (Windows)
+   * **Create Task** (not basic)
+   * **Triggers:** Add both:
+
+     * At log on
+     * On workstation unlock
+   * **Action:** Start a program → point to `scripts/auto-git-pull.bat`
+   * **(Optional):** Check "Run with highest privileges"
+
+4. **Check `scripts/git-pull-log.txt`** for pull history and errors.
+
+---
+
+## 📦 Scripts in `package.json`
+
+```json
+"scripts": {
+  "start": "node server.js",
+  "dev": "npm run stop && concurrently \"npm:watch-server\" \"npm:browser-sync\"",
+  "stop": "npx kill-port 3000 3010 4000 3001",
+  "watch-server": "nodemon server.js --watch server.js",
+  "browser-sync": "browser-sync start --config bs-config.js",
+  "lint": "eslint .",
+  "lint:fix": "eslint . --fix",
+  "format": "prettier --write .",
+  "format:check": "prettier --check .",
+  "test": "echo \"Error: no test specified\" && exit 1"
+}
+```
+
+---
+
+## 🛠 Troubleshooting
+
+* If you see `EADDRINUSE` or "port in use" errors, make sure to use `npm run stop` before starting the dev server.
+* If you get merge conflicts during a `git pull`, your **local code will always be kept** (see the `-X ours` merge strategy in the automation script).
+* For logs or debugging, see `scripts/git-pull-log.txt`.
+
+---
+
+## 🤝 Contributing
+
+Feel free to open pull requests or issues!
+
+---

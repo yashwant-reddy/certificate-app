@@ -4,3 +4,4 @@ node_modules/
 !/uploads/.gitkeep
 scripts/git-pull-log.txt
 scripts/dev-server-log.txt
+public/data/CertificateRefNumberDetails.csv

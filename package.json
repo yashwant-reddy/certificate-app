@@ -17,7 +17,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "npm run stop && concurrently \"npm:watch-server\" \"npm:browser-sync\"",
-    "stop": "npx kill-port 3000 3010 4000 3001",
+    "stop": "npx kill-port 5001 5000 4000 3001",
     "watch-server": "nodemon server.js --watch server.js",
     "browser-sync": "browser-sync start --config bs-config.js",
     "lint": "eslint .",

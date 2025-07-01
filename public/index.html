@@ -184,8 +184,11 @@
   <body>
     <div class="container">
       <div class="readout-container">
-        <h1>Readout Report Form</h1>
+        <h1>Readout Report Analysis and Certificate</h1>
         <form id="htmlForm" action="/preview" method="GET">
+          <label for="operator">Operator:</label>
+          <input type="text" id="operator" name="operator" />
+
           <!-- A/C Reg input and dropdown container -->
           <label for="acReg">A/C Reg:</label>
           <input
@@ -213,13 +216,6 @@
             "
           ></div>
 
-          <!-- Work Order and Operator -->
-          <label for="workOrderNo">Work Order No:</label>
-          <input type="text" id="workOrderNo" name="workOrderNo" />
-
-          <label for="operator">Operator:</label>
-          <input type="text" id="operator" name="operator" />
-
           <!-- Auto-filled but editable fields -->
           <label for="typeOfAC">Type of A/C:</label>
           <input type="text" id="typeOfAC" name="typeOfAC" />
@@ -242,6 +238,10 @@
 
           <label for="natureOfReadout">Nature of Readout:</label>
           <input type="text" id="natureOfReadout" name="natureOfReadout" />
+
+          <!-- Work Order and Operator -->
+          <label for="workOrderNo">Work Order No:</label>
+          <input type="text" id="workOrderNo" name="workOrderNo" />
 
           <label for="lflRefNo">LFL Ref No:</label>
           <input type="text" id="lflRefNo" name="lflRefNo" />
@@ -268,7 +268,7 @@
         </form>
       </div>
       <div class="file-container" style="display: none">
-        <h1>Upload Multiple CSV Files</h1>
+        <h1>Upload FDR Data</h1>
         <form id="uploadForm" enctype="multipart/form-data">
           <label for="files">Select CSV Files:</label>
 

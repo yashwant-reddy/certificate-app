@@ -9,6 +9,12 @@ const upload = multer({ dest: 'uploads/' });
 
 const removeSubframeIndexFromReport1 = require('../utils/removeSubframeIndex');
 
+// Utility: Check if a filename (without extension) contains ONLY a standalone 1 (not 11, 12, etc)
+function isStandalone1File(filename) {
+  const baseName = path.parse(filename).name;
+  return /(^|[^\d])1(\D|$)/.test(baseName);
+}
+
 router.post('/', upload.array('files'), async (req, res) => {
   const files = req.files || [];
   if (files.length === 0) {
@@ -44,18 +50,18 @@ router.post('/', upload.array('files'), async (req, res) => {
     })
   );
 
-  // Step 2: Clean up Report 1 (if named exactly "Readout Report 1.csv" or any variant you define)
-  const targetKey = Object.keys(allResults).find((name) =>
-    name.toLowerCase().includes('readout report 1')
-  );
-
-  if (targetKey) {
-    allResults[targetKey] = removeSubframeIndexFromReport1(
-      allResults[targetKey]
-    );
-    firstObjects[targetKey] = allResults[targetKey][0];
-    console.log('\n✅ Keys in cleaned Report 1:');
-    console.log(Object.keys(allResults[targetKey][0]));
+  // Step 2: Clean up any file with a standalone '1' (not 11, 12, etc)
+  for (const fileName of Object.keys(allResults)) {
+    if (isStandalone1File(fileName)) {
+      allResults[fileName] = removeSubframeIndexFromReport1(
+        allResults[fileName]
+      );
+      if (allResults[fileName].length > 0) {
+        firstObjects[fileName] = allResults[fileName][0];
+      }
+      console.log(`\n✅ Keys in cleaned "${fileName}":`);
+      console.log(Object.keys(allResults[fileName][0]));
+    }
   }
 
   // Normalize keys
@@ -77,7 +83,8 @@ router.post('/', upload.array('files'), async (req, res) => {
       .filter(([_, count]) => count > 1)
       .map(([key]) => key)
   );
-  repeatingKeys.add(normalizedSubframeIndexKey); // Always remove Subframe Index
+  // REMOVE this line!
+  // repeatingKeys.add(normalizedSubframeIndexKey); // Always remove Subframe Index
 
   console.log('\n🚫 Keys to remove (normalized):');
   console.log(Array.from(repeatingKeys));
@@ -85,28 +92,36 @@ router.post('/', upload.array('files'), async (req, res) => {
   // Step 5: Filter rows
   const filteredResults = {};
   for (const [fileName, rows] of Object.entries(allResults)) {
-    filteredResults[fileName] = rows.map((row) => {
-      const filtered = {};
-      for (const key in row) {
-        const trimmedKey = key.trim();
-        const nKey = normalizeKey(trimmedKey);
+    if (isStandalone1File(fileName)) {
+      // For '1' files, do not filter any more keys—just output as already cleaned!
+      filteredResults[fileName] = rows;
+      console.log(
+        `\n📄 ${fileName}: no keys removed except 'Subframe Index' (by special rule)`
+      );
+    } else {
+      // For other files, remove repeating keys as usual
+      filteredResults[fileName] = rows.map((row) => {
+        const filtered = {};
+        for (const key in row) {
+          const trimmedKey = key.trim();
+          const nKey = normalizeKey(trimmedKey);
 
-        const shouldRemove =
-          repeatingKeys.has(nKey) || trimmedKey === 'Subframe Index';
-        if (!shouldRemove) {
-          filtered[trimmedKey] = row[key];
+          const shouldRemove = repeatingKeys.has(nKey);
+          if (!shouldRemove) {
+            filtered[trimmedKey] = row[key];
+          }
         }
-      }
-      return filtered;
-    });
+        return filtered;
+      });
 
-    const originalKeys = new Set(rows.flatMap((r) => Object.keys(r)));
-    const removedKeys = [...originalKeys].filter((key) => {
-      const nKey = normalizeKey(key);
-      return repeatingKeys.has(nKey);
-    });
+      const originalKeys = new Set(rows.flatMap((r) => Object.keys(r)));
+      const removedKeys = [...originalKeys].filter((key) => {
+        const nKey = normalizeKey(key);
+        return repeatingKeys.has(nKey);
+      });
 
-    console.log(`\n📄 ${fileName}: removed keys ->`, removedKeys);
+      console.log(`\n📄 ${fileName}: removed keys ->`, removedKeys);
+    }
   }
 
   // Step 6: Write JSON files with actual filenames

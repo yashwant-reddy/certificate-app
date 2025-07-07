@@ -15,12 +15,23 @@ const fileList = document.getElementById('file-list');
 
 fileContainer.style.display = 'none';
 previewButton.style.display = 'none';
-acRegInput.disabled = true;
 
 let operatorDropdownItems = [];
 let operatorDropdownIndex = -1;
 let acRegDropdownItems = [];
 let acRegDropdownIndex = -1;
+
+// Prevent form submission when pressing Enter in any input
+document.getElementById('htmlForm').addEventListener('keydown', function (e) {
+  // Only block if Enter is pressed and the target is not a button or textarea
+  if (
+    e.key === 'Enter' &&
+    (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')
+  ) {
+    e.preventDefault();
+    return false;
+  }
+});
 
 // Load aircraft data and prepare Operator/Reg options
 window.addEventListener('DOMContentLoaded', async () => {
@@ -144,7 +155,6 @@ function selectOperator(op) {
   selectedOperator = op;
   operatorDropdown.style.display = 'none';
 
-  acRegInput.disabled = false;
   acRegInput.value = '';
   filterAcRegDropdown();
   clearAircraftDetails();
@@ -155,9 +165,11 @@ operatorInput.addEventListener('input', function () {
   if (!this.value.trim()) {
     selectedOperator = '';
     acRegInput.value = '';
-    acRegInput.disabled = true;
     clearAircraftDetails();
+    document.getElementById('natureOfReadout').value = '';
+    document.getElementById('dataReceivedFrom').value = '';
     filterAcRegDropdown();
+    hideSecondFormIfAllBlank();
   }
 });
 
@@ -301,6 +313,12 @@ function selectAcReg(reg) {
   selectedOperator = data['Operator'] || '';
   operatorInput.value = data['Operator'] || '';
 
+  // Set Nature of Readout to Periodical
+  document.getElementById('natureOfReadout').value = 'Periodical';
+
+  // Set Data Received From to Operator
+  document.getElementById('dataReceivedFrom').value = 'Operator';
+
   acRegDropdown.style.display = 'none';
   handleAcRegChange();
 }
@@ -353,14 +371,39 @@ function clearAircraftDetails() {
   document.getElementById('noOfParametersSubmitted').value = '';
 }
 
+function hideSecondFormIfAllBlank() {
+  // You can add more fields if needed
+  if (
+    !operatorInput.value.trim() &&
+    !acRegInput.value.trim() &&
+    !document.getElementById('typeOfAC').value.trim() &&
+    !document.getElementById('fdrPnSn').value.trim()
+  ) {
+    fileContainer.style.display = 'none';
+    previewButton.style.display = 'none';
+    // If you have a separate <form> for upload, hide it too:
+    // document.getElementById('uploadForm').style.display = 'none';
+  }
+}
+
 // --- Update visibility based on A/C Reg input ---
 function handleAcRegChange() {
   const acRegValue = acRegInput.value.trim();
-  if (acRegValue) {
+  if (acRegValue && aircraftData[acRegValue]) {
+    // Valid A/C Reg and validate nature of readout and data received from
+    document.getElementById('natureOfReadout').value = 'Periodical';
+    document.getElementById('dataReceivedFrom').value = 'Operator';
     fileContainer.style.display = 'block';
   } else {
+    // Invalid or empty: clear all details!
+    operatorInput.value = '';
+    selectedOperator = '';
+    clearAircraftDetails();
+    document.getElementById('natureOfReadout').value = '';
+    document.getElementById('dataReceivedFrom').value = '';
     fileContainer.style.display = 'none';
     previewButton.style.display = 'none';
+    hideSecondFormIfAllBlank();
   }
 }
 acRegInput.addEventListener('input', handleAcRegChange);

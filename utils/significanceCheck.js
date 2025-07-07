@@ -1,17 +1,41 @@
+const {
+  cleanAndFilterAndFormatKeys,
+  classifyFieldTypes,
+  safeValue,
+  isInteger,
+  isFloat,
+  isString,
+} = require('../utils/helpers');
+
 function isAllSameValue(values) {
   const stringified = values.map((v) =>
     typeof v === 'string' ? v.trim() : String(v)
   );
   const unique = [...new Set(stringified.map((v) => JSON.stringify(v)))];
   const isAllSame = unique.length === 1;
-  //   console.log(
-  //     `[isAllSameValue] isAllSame: ${isAllSame}, value: ${
-  //       isAllSame ? stringified[0] : "N/A"
-  //     }`
-  //   );
+  let dataType = null;
+  let parsedValue = null;
+
+  if (isAllSame) {
+    const val = stringified[0];
+    if (isInteger(val)) {
+      dataType = 'integer';
+      // Remove .0 if present, so "0.00" -> 0
+      parsedValue = parseInt(Number(val), 10);
+    } else if (isFloat(val)) {
+      dataType = 'float';
+      parsedValue = parseFloat(val);
+    } else {
+      dataType = 'string';
+      parsedValue = val;
+    }
+  }
+
   return {
     isAllSame,
     sameValue: isAllSame ? stringified[0] : null,
+    dataType,
+    parsedValue,
   };
 }
 
@@ -36,15 +60,15 @@ function checkSpecialPattern(values) {
       }
       if (candidatePattern.length < patternLen) continue;
 
-      // Find indices of '---' and non-'---' values in the candidate pattern
+      // Find indices of '---' or more dashes and non-dash values in the candidate pattern
       const dashPositions = [];
       const valuePositions = [];
       for (let j = 0; j < candidatePattern.length; j++) {
-        if (candidatePattern[j] === '---') dashPositions.push(j);
+        if (/^-{3,}$/.test(candidatePattern[j])) dashPositions.push(j);
         else valuePositions.push(j);
       }
 
-      // Must have exactly one meaningful (non '---') position
+      // Must have exactly one meaningful (non dash) position
       if (valuePositions.length !== 1) continue;
 
       const variableIndex = valuePositions[0];
@@ -59,7 +83,7 @@ function checkSpecialPattern(values) {
 
         // Check dashes
         for (const dashPos of dashPositions) {
-          if (segment[dashPos] !== '---') {
+          if (!/^-{3,}$/.test(segment[dashPos])) {
             valid = false;
             break;
           }

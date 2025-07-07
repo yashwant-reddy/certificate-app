@@ -101,24 +101,24 @@ router.get('/', async (req, res) => {
   let html = fs.readFileSync(templatePath, 'utf-8');
 
   html = html
-    .replace('{{workOrderNo}}', formData.workOrderNo || 'Update')
-    .replace(/{{operator}}/g, formData.operator || 'Update')
-    .replace(/{{acReg}}/g, formData.acReg || 'Update')
-    .replace(/{{typeOfAC}}/g, formData.typeOfAC || 'Update')
-    .replace('{{dateOfDumping}}', formData.dateOfDumping || 'Update')
-    .replace('{{dataReceivedFrom}}', formData.dataReceivedFrom || 'Update')
-    .replace('{{fdrPnSn}}', formData.fdrPnSn || 'Update')
-    .replace('{{dateOfFlight}}', formData.dateOfFlight || 'Update')
-    .replace('{{flightSector}}', formData.flightSector || 'Update')
-    .replace('{{natureOfReadout}}', formData.natureOfReadout || 'Update')
-    .replace('{{lflRefNo}}', formData.lflRefNo || 'Update')
+    .replace('{{workOrderNo}}', formData.workOrderNo || 'Enter')
+    .replace(/{{operator}}/g, formData.operator || 'Enter')
+    .replace(/{{acReg}}/g, formData.acReg || 'Enter')
+    .replace(/{{typeOfAC}}/g, formData.typeOfAC || 'Enter')
+    .replace('{{dateOfDumping}}', formData.dateOfDumping || 'Enter')
+    .replace('{{dataReceivedFrom}}', formData.dataReceivedFrom || 'Enter')
+    .replace('{{fdrPnSn}}', formData.fdrPnSn || 'Enter')
+    .replace('{{dateOfFlight}}', formData.dateOfFlight || 'Enter')
+    .replace('{{flightSector}}', formData.flightSector || 'Enter')
+    .replace('{{natureOfReadout}}', formData.natureOfReadout || 'Enter')
+    .replace('{{lflRefNo}}', formData.lflRefNo || 'Enter')
     .replace(
       '{{noOfParametersRecorded}}',
-      formData.noOfParametersRecorded || 'Update'
+      formData.noOfParametersRecorded || 'Enter'
     )
     .replace(
       '{{noOfParametersSubmitted}}',
-      formData.noOfParametersSubmitted || 'Update'
+      formData.noOfParametersSubmitted || 'Enter'
     )
     .replace('{{certificateRefNo}}', certificateRefNo)
     .replace('{{currentDate}}', formattedDate)
@@ -212,7 +212,7 @@ router.get('/', async (req, res) => {
     for (const row of rowWiseFieldTypes) {
       for (const [key, type] of Object.entries(row.fieldTypes)) {
         if (!fieldTypeCounts[key]) {
-          fieldTypeCounts[key] = { Variable: 0, Discrete: 0, Update: 0 };
+          fieldTypeCounts[key] = { Variable: 0, Discrete: 0, Enter: 0 };
         }
         fieldTypeCounts[key][type]++;
       }
@@ -226,7 +226,7 @@ router.get('/', async (req, res) => {
             ? 'Variable'
             : counts.Discrete > 0
               ? 'Discrete'
-              : 'Update',
+              : 'Enter',
         count: counts,
       };
     }

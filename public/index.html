@@ -3,218 +3,59 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flight Report - Upload & Preview</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f5f7fa;
-        color: #333;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: 100vh;
-      }
-
-      .container {
-        width: 100%;
-        max-width: 700px;
-        padding: 2rem;
-        box-sizing: border-box;
-      }
-
-      h1 {
-        text-align: center;
-        color: #004080;
-        border-bottom: 2px solid #ccc;
-        padding-bottom: 5px;
-        margin-bottom: 20px;
-      }
-
-      form {
-        background-color: #fff;
-        padding: 20px;
-        margin-bottom: 40px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-      }
-
-      label,
-      input,
-      select {
-        margin: 0;
-        padding: 0;
-      }
-
-      label {
-        margin-top: 15px;
-        margin-bottom: 5px;
-        display: block;
-        font-weight: bold;
-      }
-
-      input[type='file'] {
-        display: none;
-      }
-
-      input[type='text'],
-      input[list],
-      select {
-        display: block;
-        /* make inputs block level */
-        width: 100%;
-        padding: 8px;
-        margin-top: 5px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-sizing: border-box;
-        font-family: inherit;
-        font-size: 1rem;
-        background-color: #fff;
-      }
-
-      .input-wrapper {
-        width: 100%;
-        display: block;
-        /* block container */
-      }
-
-      .input-wrapper input,
-      .input-wrapper datalist {
-        display: block;
-        /* force both to stack */
-        width: 100%;
-      }
-
-      .input-wrapper input {
-        margin-bottom: 0.3rem;
-        /* spacing below input */
-      }
-
-      .dropdown-list {
-        position: absolute;
-        background-color: white;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        max-height: 150px;
-        overflow-y: auto;
-        width: 100%;
-        box-sizing: border-box;
-        z-index: 1000;
-        display: none;
-        /* hidden by default */
-        margin-top: 2px;
-        font-size: 1rem;
-      }
-
-      .dropdown-list div {
-        padding: 8px 10px;
-        cursor: pointer;
-      }
-
-      .dropdown-list div:hover {
-        background-color: #0073e6;
-        color: white;
-      }
-
-      button {
-        display: block;
-        width: 100%;
-        margin-top: 20px;
-        background-color: #0073e6;
-        color: white;
-        padding: 10px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 1rem;
-      }
-
-      button:hover {
-        background-color: #005bb5;
-      }
-      button:disabled {
-        cursor: not-allowed;
-      }
-
-      ul#file-list {
-        list-style: none;
-        padding-left: 0;
-        margin-top: 15px;
-      }
-
-      ul#file-list li {
-        background-color: #e9f0fb;
-        border-left: 4px solid #0073e6;
-        padding: 8px 12px;
-        margin-bottom: 8px;
-        border-radius: 4px;
-        font-size: 0.95rem;
-        color: #333;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      ul#file-list li::before {
-        /* content: "📄"; */
-        font-size: 1.1rem;
-      }
-
-      .file-upload-btn {
-        display: inline-block;
-        padding: 10px 16px;
-        background-color: #0073e6;
-        color: white;
-        font-size: 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        text-align: center;
-        margin-top: 10px;
-        transition: background-color 0.2s ease-in-out;
-      }
-
-      .file-upload-btn:hover {
-        background-color: #005bb5;
-      }
-    </style>
+    <title>Readout Certificate</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
 
   <body>
     <div class="container">
       <div class="readout-container">
         <h1>Readout Report Analysis and Certificate</h1>
-        <form id="htmlForm" action="/preview" method="GET">
-          <label for="operator">Operator:</label>
-          <input type="text" id="operator" name="operator" />
-
+        <form
+          id="htmlForm"
+          action="/preview"
+          method="GET"
+          autocomplete="off"
+          style="position: relative"
+        >
+          <!-- OPERATOR FIELD AND DROPDOWN -->
+          <div id="operatorContainer" style="position: relative">
+            <label for="operator">Operator:</label>
+            <input
+              type="text"
+              id="operator"
+              name="operator"
+              onfocus="showOperatorDropdown()"
+              onblur="hideOperatorDropdown()"
+              autocomplete="off"
+              placeholder="Enter Operator"
+            />
+            <div
+              id="operatorDropdown"
+              class="dropdown-list"
+              style="display: none"
+            ></div>
+          </div>
           <!-- A/C Reg input and dropdown container -->
-          <label for="acReg">A/C Reg:</label>
-          <input
-            type="text"
-            id="acReg"
-            name="acReg"
-            required
-            onfocus="showAcRegDropdown()"
-            onblur="hideAcRegDropdown()"
-            autocomplete="off"
-            placeholder="Enter A/C Reg"
-          />
+          <div id="acRegContainer" style="position: relative">
+            <label for="acReg">A/C Reg:</label>
+            <input
+              type="text"
+              id="acReg"
+              name="acReg"
+              required
+              onfocus="showAcRegDropdown()"
+              onblur="hideAcRegDropdown()"
+              autocomplete="off"
+              placeholder="Enter A/C Reg"
+            />
 
-          <div
-            id="acRegDropdown"
-            class="dropdown-list"
-            style="
-              display: none;
-              position: absolute;
-              max-height: 150px;
-              overflow-y: auto;
-              border: 1px solid #ccc;
-              background: #fff;
-              z-index: 1000;
-            "
-          ></div>
+            <div
+              id="acRegDropdown"
+              class="dropdown-list"
+              style="display: none"
+            ></div>
+          </div>
 
           <!-- Auto-filled but editable fields -->
           <label for="typeOfAC">Type of A/C:</label>
@@ -223,7 +64,6 @@
           <label for="fdrPnSn">FDR P/N-S/N:</label>
           <input type="text" id="fdrPnSn" name="fdrPnSn" />
 
-          <!-- Remaining fields -->
           <label for="dateOfDumping">Date of Dumping:</label>
           <input type="text" id="dateOfDumping" name="dateOfDumping" />
 
@@ -239,7 +79,6 @@
           <label for="natureOfReadout">Nature of Readout:</label>
           <input type="text" id="natureOfReadout" name="natureOfReadout" />
 
-          <!-- Work Order and Operator -->
           <label for="workOrderNo">Work Order No:</label>
           <input type="text" id="workOrderNo" name="workOrderNo" />
 
@@ -271,8 +110,6 @@
         <h1>Upload FDR Data</h1>
         <form id="uploadForm" enctype="multipart/form-data">
           <label for="files">Select CSV Files:</label>
-
-          <!-- Hidden actual input -->
           <input
             type="file"
             id="files"
@@ -281,13 +118,8 @@
             multiple
             hidden
           />
-
-          <!-- Styled button acting as a label -->
           <label for="files" class="file-upload-btn">Choose CSV Files</label>
-
-          <!-- List of selected files -->
           <ul id="file-list"></ul>
-
           <button type="submit">Upload</button>
           <button type="button" onclick="clearUploads()">
             Clear Uploaded Files
@@ -295,249 +127,6 @@
         </form>
       </div>
     </div>
-
-    <!-- Script to auto-fill based on A/C Reg -->
-    <script>
-      let aircraftData = {};
-      let allAcRegOptions = [];
-
-      // Elements
-      const acRegInput = document.getElementById('acReg');
-      const fileContainer = document.querySelector('.file-container');
-      const previewButton = document.querySelector(
-        '#htmlForm button[type="submit"]'
-      );
-      const fileInput = document.getElementById('files');
-      const fileList = document.getElementById('file-list');
-
-      // Initial UI state
-      fileContainer.style.display = 'none';
-      previewButton.style.display = 'none';
-
-      // Load aircraft data for A/C Reg dropdown
-      window.addEventListener('DOMContentLoaded', async () => {
-        try {
-          const res = await fetch('/data/Operator Info.json');
-          if (!res.ok) throw new Error('Failed to load aircraft data.');
-
-          const jsonData = await res.json();
-          aircraftData = {};
-
-          for (const acReg in jsonData) {
-            if (acReg) {
-              const entry = jsonData[acReg];
-              const cleanedEntry = {};
-
-              for (const key in entry) {
-                let value = entry[key];
-                if (typeof value === 'string') {
-                  value = value.replace(/^,+|,+$/g, '').trim();
-                }
-                cleanedEntry[key] = value;
-              }
-
-              aircraftData[acReg.replace(/^,+|,+$/g, '').trim()] = cleanedEntry;
-            }
-          }
-
-          allAcRegOptions = Object.keys(aircraftData);
-          handleAcRegChange(); // Check A/C Reg on load
-        } catch (error) {
-          alert('Error loading aircraft data');
-        }
-      });
-
-      // Update visibility based on A/C Reg input
-      function handleAcRegChange() {
-        const acRegValue = acRegInput.value.trim();
-        if (acRegValue) {
-          fileContainer.style.display = 'block';
-        } else {
-          fileContainer.style.display = 'none';
-          previewButton.style.display = 'none';
-        }
-      }
-
-      acRegInput.addEventListener('input', handleAcRegChange);
-
-      // Custom A/C Reg dropdown logic
-      const acRegDropdown = document.getElementById('acRegDropdown');
-
-      function showAcRegDropdown() {
-        if (allAcRegOptions.length === 0) return;
-        acRegDropdown.style.display = 'block';
-        positionDropdown();
-        filterAcRegDropdown();
-      }
-
-      function hideAcRegDropdown() {
-        setTimeout(() => {
-          acRegDropdown.style.display = 'none';
-        }, 400);
-      }
-
-      function positionDropdown() {
-        const rect = acRegInput.getBoundingClientRect();
-        acRegDropdown.style.position = 'absolute';
-        acRegDropdown.style.top = rect.bottom + window.scrollY + 'px';
-        acRegDropdown.style.left = rect.left + window.scrollX + 'px';
-        acRegDropdown.style.width = rect.width + 'px';
-        acRegDropdown.style.maxHeight = '150px';
-        acRegDropdown.style.overflowY = 'auto';
-        acRegDropdown.style.border = '1px solid #ccc';
-        acRegDropdown.style.backgroundColor = '#fff';
-        acRegDropdown.style.zIndex = 1000;
-      }
-
-      function filterAcRegDropdown() {
-        const filter = acRegInput.value.toUpperCase();
-        acRegDropdown.innerHTML = '';
-
-        const filtered = allAcRegOptions.filter((reg) =>
-          reg.toUpperCase().includes(filter)
-        );
-
-        if (filtered.length === 0) {
-          const div = document.createElement('div');
-          div.textContent = 'No matches found';
-          div.style.color = '#999';
-          div.style.padding = '5px 10px';
-          acRegDropdown.appendChild(div);
-        } else {
-          filtered.forEach((reg) => {
-            const div = createDropdownItem(reg);
-            acRegDropdown.appendChild(div);
-          });
-        }
-      }
-
-      function createDropdownItem(reg) {
-        const div = document.createElement('div');
-        div.textContent = reg;
-        div.style.padding = '5px 10px';
-        div.style.cursor = 'pointer';
-        div.onmouseenter = () => (div.style.backgroundColor = '#ddd');
-        div.onmouseleave = () => (div.style.backgroundColor = '#fff');
-        div.onclick = () => selectAcReg(reg);
-        return div;
-      }
-
-      function selectAcReg(reg) {
-        acRegInput.value = reg;
-        updateAcDetails();
-        acRegDropdown.style.display = 'none';
-        handleAcRegChange(); // Trigger fileContainer check
-      }
-
-      acRegInput.addEventListener('input', filterAcRegDropdown);
-      acRegInput.addEventListener('focus', showAcRegDropdown);
-      acRegInput.addEventListener('blur', hideAcRegDropdown);
-
-      // Autofill fields
-      function updateAcDetails() {
-        const acReg = acRegInput.value;
-        const data = aircraftData[acReg] || {};
-
-        document.getElementById('typeOfAC').value = data['Aircraft type'] || '';
-        document.getElementById('operator').value = data['Operator'] || '';
-        document.getElementById('fdrPnSn').value =
-          (data['Part Number'] || '') + ';' + (data['Serial Number'] || '');
-        document.getElementById('lflRefNo').value =
-          data['LFL Refrence NO'] || '';
-        document.getElementById('noOfParametersRecorded').value =
-          data['No of Parameter recorded'] || '';
-        document.getElementById('noOfParametersSubmitted').value =
-          data['No of Parameter submitted for Evaluation'] || '';
-      }
-
-      // Toggle preview button based on file input
-      fileInput.addEventListener('change', () => {
-        fileList.innerHTML = '';
-        Array.from(fileInput.files).forEach((file) => {
-          const li = document.createElement('li');
-          li.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-          fileList.appendChild(li);
-        });
-        previewButton.style.display =
-          fileInput.files.length > 0 ? 'block' : 'none';
-      });
-
-      // Clear uploaded files
-      function clearUploads() {
-        if (
-          confirm('Are you sure you want to delete all uploaded report files?')
-        ) {
-          fetch('/clear-uploads', { method: 'POST' })
-            .then((response) => {
-              if (!response.ok) throw new Error('Failed to clear uploads');
-              return response.text();
-            })
-            .then(() => {
-              fileInput.value = '';
-              fileList.innerHTML = '';
-              previewButton.style.display = 'none';
-              alert('Uploaded reports cleared successfully.');
-            })
-            .catch(() => {
-              alert('Error clearing uploads.');
-            });
-        }
-      }
-
-      // Upload form submission
-      document
-        .getElementById('uploadForm')
-        .addEventListener('submit', async function (e) {
-          e.preventDefault();
-          const formData = new FormData(this);
-          try {
-            const res = await fetch('/upload', {
-              method: 'POST',
-              body: formData,
-            });
-            if (!res.ok) throw new Error('Upload failed');
-            alert('CSV files uploaded successfully.');
-          } catch (err) {
-            alert('Upload error.');
-          }
-        });
-
-      // Preview form submission
-      document
-        .getElementById('htmlForm')
-        .addEventListener('submit', async function (e) {
-          e.preventDefault();
-
-          const formData = new FormData(this);
-          const params = new URLSearchParams(formData);
-          const button = previewButton;
-
-          button.disabled = true;
-          button.style.backgroundColor = '#999';
-          button.textContent = 'Generating...';
-
-          try {
-            const res = await fetch('/preview?' + params.toString(), {
-              method: 'GET',
-            });
-
-            if (!res.ok) {
-              alert('Preview failed');
-            } else {
-              const htmlContent = await res.text();
-              const blob = new Blob([htmlContent], { type: 'text/html' });
-              const previewUrl = URL.createObjectURL(blob);
-              window.open(previewUrl, '_blank');
-              button.textContent = 'Generated ✔️';
-            }
-          } catch (err) {
-            alert('Network error');
-          } finally {
-            button.disabled = false;
-            button.style.backgroundColor = '#0073e6';
-            button.textContent = 'Generate HTML Preview';
-          }
-        });
-    </script>
+    <script src="main.js"></script>
   </body>
 </html>

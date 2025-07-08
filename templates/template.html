@@ -160,7 +160,7 @@
 
       /* Page setup */
       @page:first {
-        margin: 10mm 10mm 15mm 10mm;
+        margin: 15mm 15mm 15mm 15mm;
       }
 
       @page {
@@ -169,6 +169,30 @@
       }
 
       @media print {
+        /* Print in Landscape format */
+        @page {
+          size: landscape;
+        }
+        /* Make the Table headers will never print at the bottom of a page; they will shift to the next page automatically. */
+        thead {
+          display: table-header-group;
+        }
+        tfoot {
+          display: table-footer-group;
+        }
+
+        table {
+          page-break-inside: auto;
+        }
+        tr,
+        th,
+        td {
+          page-break-inside: avoid !important;
+        }
+        tr {
+          page-break-after: auto;
+        }
+
         body {
           margin: 0;
           padding: 0;
@@ -407,9 +431,9 @@
                 2019.
               </p>
               <p>
-                <strong>Attention:</strong> The operator is advised to go through the
-                readout report to determine that the SSFDR system is functioning
-                correctly.
+                <strong>Attention:</strong> The operator is advised to go
+                through the readout report to determine that the SSFDR system is
+                functioning correctly.
               </p>
               <!-- Temporary Removal -->
               <!-- <p>

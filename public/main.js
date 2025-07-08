@@ -411,12 +411,35 @@ acRegInput.addEventListener('input', handleAcRegChange);
 // --- Upload and Preview Logic (Unchanged) ---
 fileInput.addEventListener('change', () => {
   fileList.innerHTML = '';
-  Array.from(fileInput.files).forEach((file) => {
+  const files = Array.from(fileInput.files);
+  let allValid = true;
+  const validFiles = [];
+
+  files.forEach((file) => {
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      validFiles.push(file);
+    } else {
+      allValid = false;
+    }
+  });
+
+  // If any invalid file found, alert and filter input to only CSV files
+  if (!allValid) {
+    alert('Please upload only CSV files');
+    // Re-assign only valid files to the file input
+    const dataTransfer = new DataTransfer();
+    validFiles.forEach((f) => dataTransfer.items.add(f));
+    fileInput.files = dataTransfer.files;
+  }
+
+  // Show only valid files in the UI
+  validFiles.forEach((file) => {
     const li = document.createElement('li');
     li.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
     fileList.appendChild(li);
   });
-  previewButton.style.display = fileInput.files.length > 0 ? 'block' : 'none';
+
+  previewButton.style.display = validFiles.length > 0 ? 'block' : 'none';
 });
 
 function clearUploads() {

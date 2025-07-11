@@ -2,18 +2,17 @@ const fs = require('fs');
 const path = require('path');
 const { stringify } = require('csv-stringify/sync');
 
-const csvFilePath = path.join(
-  __dirname,
-  '..',
-  'public',
-  'data',
-  'CertificateRefNumberDetails.csv'
-);
+const dataDir = path.join(process.cwd(), 'data');
+const csvFilePath = path.join(dataDir, 'CertificateRefNumberDetails.csv');
 
 // Ensure directory exists
-const dir = path.dirname(csvFilePath);
-if (!fs.existsSync(dir)) {
-  fs.mkdirSync(dir, { recursive: true });
+if (!fs.existsSync(dataDir)) {
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log(`[INFO] Created data directory: ${dataDir}`);
+  } catch (err) {
+    console.error(`[ERROR] Creating data directory: ${dataDir}`, err);
+  }
 }
 
 // Define CSV headers
@@ -38,17 +37,31 @@ const csvHeaders = [
 // Helper: Read existing data
 function readCSVFile() {
   if (!fs.existsSync(csvFilePath)) {
-    // Create file with headers
-    const headerRow = stringify([csvHeaders]);
-    fs.writeFileSync(csvFilePath, headerRow);
-    return [];
+    try {
+      // Create file with headers
+      const headerRow = stringify([csvHeaders]);
+      fs.writeFileSync(csvFilePath, headerRow);
+      console.log(`[INFO] Created new CSV with headers: ${csvFilePath}`);
+      return [];
+    } catch (err) {
+      console.error(`[ERROR] Creating CSV file: ${csvFilePath}`, err);
+      return [];
+    }
   }
 
-  const raw = fs.readFileSync(csvFilePath, 'utf-8').trim();
-  if (!raw) return [];
+  try {
+    const raw = fs.readFileSync(csvFilePath, 'utf-8').trim();
+    if (!raw) {
+      console.warn(`[WARN] CSV file is empty: ${csvFilePath}`);
+      return [];
+    }
 
-  const rows = raw.split('\n').slice(1); // skip header
-  return rows.map((line) => line.split(','));
+    const rows = raw.split('\n').slice(1); // skip header
+    return rows.map((line) => line.split(','));
+  } catch (err) {
+    console.error(`[ERROR] Reading CSV file: ${csvFilePath}`, err);
+    return [];
+  }
 }
 
 // Write certificate entry and return integer reference number
@@ -76,8 +89,15 @@ function writeCertificateData(formData) {
     formData.noOfParametersSubmitted || '',
   ];
 
-  const csvRow = stringify([newRow]);
-  fs.appendFileSync(csvFilePath, csvRow);
+  try {
+    const csvRow = stringify([newRow]);
+    fs.appendFileSync(csvFilePath, csvRow);
+    console.log(`[INFO] Appended new row to CSV: ${csvFilePath}`);
+    console.log('[INFO] Row data:', newRow);
+  } catch (err) {
+    console.error(`[ERROR] Appending row to CSV: ${csvFilePath}`, err);
+    throw err;
+  }
 
   return nextCounter; // Just the integer
 }

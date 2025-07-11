@@ -1,4 +1,41 @@
 {
+  "name": "certificate-generation",
+  "version": "1.0.0",
+  "main": "main.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Certificate Generation Desktop App",
+  "build": {
+    "appId": "com.yourcompany.certificateapp",
+    "productName": "CertificateApp",
+    "directories": {
+      "buildResources": "public/images"
+    },
+    "files": [
+      "**/*"
+    ],
+    "win": {
+      "icon": "public/images/certificate.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    }
+  },
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . certificate-app --icon=public/images/certificate.ico --out=dist --overwrite",
+    "dev": "npm run stop && concurrently \"npm:watch-server\" \"npm:browser-sync\"",
+    "stop": "npx kill-port 5001 5000 4000 3001",
+    "watch-server": "nodemon server.js",
+    "browser-sync": "browser-sync start --config bs-config.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.817.0",
     "@aws-sdk/client-s3": "^3.817.0",
@@ -11,34 +48,19 @@
     "multer": "^1.4.5-lts.2",
     "node-fetch": "^2.7.0"
   },
-  "name": "certificate-generation",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "npm run stop && concurrently \"npm:watch-server\" \"npm:browser-sync\"",
-    "stop": "npx kill-port 5001 5000 4000 3001",
-    "watch-server": "nodemon server.js",
-    "browser-sync": "browser-sync start --config bs-config.js",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "devDependencies": {
     "@eslint/js": "^9.27.0",
     "browser-sync": "^3.0.4",
     "concurrently": "^9.1.2",
+    "electron": "^37.2.1",
+    "electron-builder": "^26.0.12",
+    "electron-packager": "^17.1.2",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "globals": "^16.2.0",
     "kill-port": "^2.0.1",
     "nodemon": "^3.1.10",
+    "pkg": "^5.8.1",
     "prettier": "^3.5.3"
   }
 }

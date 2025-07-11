@@ -1,3 +1,6 @@
+console.log('[INFO] Reached file: uploads.js');
+
+
 const express = require('express');
 const multer = require('multer');
 const csv = require('csv-parser');
@@ -9,6 +12,16 @@ const upload = multer({ dest: 'uploads/' });
 
 const removeSubframeIndexFromReport1 = require('../utils/removeSubframeIndex');
 
+const baseDir = process.cwd();
+const uploadsDir = path.join(baseDir, 'uploads');
+
+try {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log(`[INFO] Ensured uploads directory: ${uploadsDir}`);
+} catch (err) {
+  console.error('[ERROR] Creating uploads directory:', uploadsDir, err);
+}
+
 // Utility: Check if a filename (without extension) contains ONLY a standalone 1 (not 11, 12, etc)
 function isStandalone1File(filename) {
   const baseName = path.parse(filename).name;
@@ -17,6 +30,11 @@ function isStandalone1File(filename) {
 
 router.post('/', upload.array('files'), async (req, res) => {
   const files = req.files || [];
+  console.log(
+    `[INFO] Received files:`,
+    files.map((f) => f.originalname)
+  );
+
   if (files.length === 0) {
     return res.send('No files uploaded.');
   }
@@ -31,7 +49,9 @@ router.post('/', upload.array('files'), async (req, res) => {
         const results = [];
         const originalName = file.originalname;
 
-        fs.createReadStream(file.path)
+        const filePath = file.path;
+        console.log(`[INFO] Reading uploaded CSV: ${filePath}`);
+        fs.createReadStream(filePath)
           .pipe(csv())
           .on('data', (data) => results.push(data))
           .on('end', () => {
@@ -39,11 +59,16 @@ router.post('/', upload.array('files'), async (req, res) => {
             if (results.length > 0) {
               firstObjects[originalName] = results[0];
             }
-            fs.unlinkSync(file.path); // Clean up temp upload
+            try {
+              fs.unlinkSync(filePath); // Clean up temp upload
+              console.log(`[INFO] Deleted temp uploaded file: ${filePath}`);
+            } catch (err) {
+              console.error('[ERROR] Deleting temp file:', filePath, err);
+            }
             resolve();
           })
           .on('error', (err) => {
-            console.error(`Error reading ${originalName}:`, err);
+            console.error(`[ERROR] Reading ${originalName}:`, err);
             reject(err);
           });
       });
@@ -53,13 +78,14 @@ router.post('/', upload.array('files'), async (req, res) => {
   // Step 2: Clean up any file with a standalone '1' (not 11, 12, etc)
   for (const fileName of Object.keys(allResults)) {
     if (isStandalone1File(fileName)) {
+      console.log(`[INFO] Cleaning Subframe Index from: ${fileName}`);
       allResults[fileName] = removeSubframeIndexFromReport1(
         allResults[fileName]
       );
       if (allResults[fileName].length > 0) {
         firstObjects[fileName] = allResults[fileName][0];
       }
-      console.log(`\n✅ Keys in cleaned "${fileName}":`);
+      console.log(`✅ Keys in cleaned "${fileName}":`);
       console.log(Object.keys(allResults[fileName][0]));
     }
   }
@@ -96,7 +122,7 @@ router.post('/', upload.array('files'), async (req, res) => {
       // For '1' files, do not filter any more keys—just output as already cleaned!
       filteredResults[fileName] = rows;
       console.log(
-        `\n📄 ${fileName}: no keys removed except 'Subframe Index' (by special rule)`
+        `📄 ${fileName}: no keys removed except 'Subframe Index' (by special rule)`
       );
     } else {
       // For other files, remove repeating keys as usual
@@ -120,7 +146,7 @@ router.post('/', upload.array('files'), async (req, res) => {
         return repeatingKeys.has(nKey);
       });
 
-      console.log(`\n📄 ${fileName}: removed keys ->`, removedKeys);
+      console.log(`📄 ${fileName}: removed keys ->`, removedKeys);
     }
   }
 
@@ -135,12 +161,16 @@ router.post('/', upload.array('files'), async (req, res) => {
     ];
 
     const outputFileName = `${baseName}.json`;
-    const outputPath = path.join(__dirname, '..', 'uploads', outputFileName);
+    const outputPath = path.join(uploadsDir, outputFileName);
 
     try {
       fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
+      console.log(`[INFO] Wrote JSON output: ${outputPath}`);
     } catch (err) {
-      console.error(`Error writing output for ${fileName}:`, err);
+      console.error(
+        `[ERROR] Writing output for ${fileName} (${outputPath}):`,
+        err
+      );
     }
   }
 
@@ -164,10 +194,13 @@ router.post('/', upload.array('files'), async (req, res) => {
 
   const sortedBaseNames = uploadedBaseNames.sort(logicalSort);
 
-  fs.writeFileSync(
-    path.join(__dirname, '..', 'uploads', 'manifest.json'),
-    JSON.stringify(sortedBaseNames, null, 2)
-  );
+  const manifestPath = path.join(uploadsDir, 'manifest.json');
+  try {
+    fs.writeFileSync(manifestPath, JSON.stringify(sortedBaseNames, null, 2));
+    console.log(`[INFO] Wrote manifest: ${manifestPath}`);
+  } catch (err) {
+    console.error(`[ERROR] Writing manifest file: ${manifestPath}`, err);
+  }
 
   res.send(
     `<h2>All ${files.length} CSV files processed with key filtering complete.</h2>`

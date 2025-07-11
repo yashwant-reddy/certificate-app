@@ -5,3 +5,10 @@ node_modules/
 scripts/git-pull-log.txt
 scripts/dev-server-log.txt
 public/data/CertificateRefNumberDetails.csv
+%LOCALAPPDATA%/
+*.exe
+data/
+dist/
+build/
+out/
+*.log

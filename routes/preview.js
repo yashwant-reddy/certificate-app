@@ -1,3 +1,6 @@
+console.log('[INFO] Reached file: preview.js');
+
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -17,6 +20,24 @@ const { writeCertificateData } = require('../utils/writeCertificateDetails');
 
 const router = express.Router();
 require('dotenv').config();
+
+// Set up user-writable folders
+const baseDir = process.cwd();
+const uploadsDir = path.join(baseDir, 'uploads');
+const dataDir = path.join(baseDir, 'data');
+
+try {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log(`[INFO] Ensured uploads directory: ${uploadsDir}`);
+} catch (err) {
+  console.error('[ERROR] Creating uploads directory:', uploadsDir, err);
+}
+try {
+  fs.mkdirSync(dataDir, { recursive: true });
+  console.log(`[INFO] Ensured data directory: ${dataDir}`);
+} catch (err) {
+  console.error('[ERROR] Creating data directory:', dataDir, err);
+}
 
 router.get('/', async (req, res) => {
   const date = new Date();
@@ -46,8 +67,9 @@ router.get('/', async (req, res) => {
   let counterValue;
   try {
     counterValue = writeCertificateData(formData);
+    console.log('[INFO] Wrote certificate data for:', formData.acReg);
   } catch (err) {
-    console.error('Error writing to CSV:', err.message);
+    console.error('[ERROR] Writing to CSV:', err.message);
     return res
       .status(500)
       .send(
@@ -86,19 +108,36 @@ router.get('/', async (req, res) => {
   try {
     if (fs.existsSync(signature1Path)) {
       signature1URI = `data:image/png;base64,${fs.readFileSync(signature1Path, 'base64')}`;
+      console.log('[INFO] Loaded:', signature1Path);
+    } else {
+      console.warn('[WARN] Signature 1 image not found:', signature1Path);
     }
     if (fs.existsSync(signature2Path)) {
       signature2URI = `data:image/png;base64,${fs.readFileSync(signature2Path, 'base64')}`;
+      console.log('[INFO] Loaded:', signature2Path);
+    } else {
+      console.warn('[WARN] Signature 2 image not found:', signature2Path);
     }
     if (fs.existsSync(logoPath)) {
       logoURI = `data:image/svg+xml;base64,${fs.readFileSync(logoPath, 'base64')}`;
+      console.log('[INFO] Loaded:', logoPath);
+    } else {
+      console.warn('[WARN] Logo image not found:', logoPath);
     }
   } catch (err) {
-    console.error('Error reading image files:', err);
+    console.error('[ERROR] Reading image files:', err);
   }
 
   const templatePath = path.join(__dirname, '..', 'templates', 'template.html');
-  let html = fs.readFileSync(templatePath, 'utf-8');
+  let html = '';
+  try {
+    console.log('[INFO] Attempting to load template:', templatePath);
+    html = fs.readFileSync(templatePath, 'utf-8');
+    console.log('[INFO] Loaded template file.');
+  } catch (err) {
+    console.error('[ERROR] Reading template file:', templatePath, err);
+    return res.status(500).send('Template file missing or unreadable.');
+  }
 
   html = html
     .replace('{{workOrderNo}}', formData.workOrderNo || 'Enter')
@@ -135,10 +174,16 @@ router.get('/', async (req, res) => {
   );
   let operatorData = {};
   try {
+    console.log('[INFO] Loading operator info data from:', operatorInfoPath);
     const rawOperatorData = fs.readFileSync(operatorInfoPath, 'utf-8');
     operatorData = JSON.parse(rawOperatorData);
+    console.log('[INFO] Loaded operator info data.');
   } catch (error) {
-    console.error('Error loading operator info data:', error);
+    console.error(
+      '[ERROR] Loading operator info data:',
+      operatorInfoPath,
+      error
+    );
   }
 
   const acRecord = operatorData[formData.acReg] || {};
@@ -156,14 +201,16 @@ router.get('/', async (req, res) => {
 
   let ReportSequenceArray = [];
   try {
-    const manifestPath = path.join(__dirname, '..', 'uploads', 'manifest.json');
+    const manifestPath = path.join(uploadsDir, 'manifest.json');
+    console.log('[INFO] Looking for manifest:', manifestPath);
     if (fs.existsSync(manifestPath)) {
       ReportSequenceArray = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      console.log('[INFO] Loaded manifest.json:', manifestPath);
     } else {
-      console.warn('⚠️ No manifest.json found');
+      console.warn('[WARN] No manifest.json found:', manifestPath);
     }
   } catch (err) {
-    console.error('Error reading manifest.json:', err);
+    console.error('[ERROR] Reading manifest.json:', err);
   }
 
   let dynamicReadoutTables = '';
@@ -171,34 +218,35 @@ router.get('/', async (req, res) => {
 
   for (const baseName of ReportSequenceArray) {
     const jsonFileName = `${baseName}.json`;
-    const jsonPath = path.join(__dirname, '..', 'uploads', jsonFileName);
+    const jsonPath = path.join(uploadsDir, jsonFileName);
 
     if (!fs.existsSync(jsonPath)) {
-      console.warn(`Skipped missing file: ${jsonFileName}`);
+      console.warn(`[WARN] Skipped missing file: ${jsonFileName}`);
       continue;
     }
 
     let reportData;
     try {
       reportData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+      console.log(`[INFO] Loaded report data for: ${jsonFileName}`);
     } catch (err) {
-      console.error(`Error parsing JSON for ${jsonFileName}:`, err);
+      console.error(`[ERROR] Parsing JSON for ${jsonFileName}:`, err);
       continue;
     }
 
     const report = reportData.find((f) => f.file === `${baseName}.csv`);
     if (!report) {
-      console.warn(`No matching report entry for ${baseName}.csv`);
+      console.warn(`[WARN] No matching report entry for ${baseName}.csv`);
       continue;
     }
 
     const content = report?.[`${baseName} Content`] || [];
     if (content.length === 0) {
-      console.warn(`No content found for ${baseName}`);
+      console.warn(`[WARN] No content found for ${baseName}`);
       continue;
     }
 
-    console.log(`Processing: ${baseName}.csv`);
+    console.log(`[INFO] Processing report: ${baseName}.csv`);
 
     const rawKeys = Object.keys(content[0]);
     const cleanedKeys = cleanAndFilterAndFormatKeys(rawKeys);
@@ -270,6 +318,7 @@ router.get('/', async (req, res) => {
   }
 
   html = html.replace('{{dynamicReadoutTables}}', dynamicReadoutTables);
+
   res.send(html);
 });
 

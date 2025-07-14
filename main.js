@@ -4,7 +4,7 @@ if (process.argv.length > 1 && process.argv[1].endsWith('server.js')) {
   return; // Prevent Electron app logic!
 }
 
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron'); // ipcMain added
 const path = require('path');
 const childProcess = require('child_process');
 
@@ -15,6 +15,17 @@ let mainWindow = null;
 let childWindows = []; // Track all child windows
 
 clearUploads(); // at startup
+
+ipcMain.handle('clear-uploads', async () => {
+  try {
+    const deleted = clearUploads();
+    console.log('[INFO] Cleared uploads via IPC:', deleted.length, 'files.');
+    return { success: true, deleted: deleted.length };
+  } catch (err) {
+    console.error('[ERROR] Failed to clear uploads via IPC:', err);
+    return { success: false, error: err.message };
+  }
+});
 
 // Find server.js for both dev and prod
 function getServerScript() {
@@ -49,7 +60,6 @@ function setAppMenu(window) {
           label: 'Print',
           accelerator: process.platform === 'darwin' ? 'Cmd+P' : 'Ctrl+P',
           click: () => {
-            // This will show the web-style print preview!
             window.webContents.executeJavaScript('window.print()');
           },
         },
@@ -70,6 +80,14 @@ function setAppMenu(window) {
         { role: 'pasteAndMatchStyle' },
         { role: 'delete' },
         { role: 'selectAll' },
+        { type: 'separator' },
+        {
+          label: 'Find',
+          accelerator: process.platform === 'darwin' ? 'Cmd+F' : 'Ctrl+F',
+          click: () => {
+            window.webContents.send('trigger-find');
+          },
+        },
       ],
     },
     {
@@ -108,7 +126,7 @@ function setAppMenu(window) {
   window.setMenu(menu);
 }
 
-// Print keboard shortcutavailable for all
+// Print keboard shortcut available for all
 function enablePrintShortcut(window) {
   window.webContents.on('before-input-event', (event, input) => {
     const isPrint =
@@ -120,6 +138,23 @@ function enablePrintShortcut(window) {
         input.key.toLowerCase() === 'p');
     if (isPrint) {
       window.webContents.print();
+      event.preventDefault();
+    }
+  });
+}
+
+// --- NEW: Enable Find Shortcut (Ctrl+F / Cmd+F) ---
+function enableFindShortcut(window) {
+  window.webContents.on('before-input-event', (event, input) => {
+    const isFind =
+      (process.platform === 'darwin' &&
+        input.meta &&
+        input.key.toLowerCase() === 'f') ||
+      (process.platform !== 'darwin' &&
+        input.control &&
+        input.key.toLowerCase() === 'f');
+    if (isFind) {
+      window.webContents.send('trigger-find');
       event.preventDefault();
     }
   });
@@ -143,6 +178,10 @@ function createWindow() {
   mainWindow.loadURL('http://localhost:4000');
   setAppMenu(mainWindow);
 
+  // --- Attach both print and find shortcuts ---
+  enablePrintShortcut(mainWindow);
+  enableFindShortcut(mainWindow);
+
   // When main window closes, close all child windows
   mainWindow.on('close', () => {
     for (const win of childWindows) {
@@ -161,16 +200,32 @@ function createWindow() {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
+        preload: path.join(__dirname, 'preload.js'),
       },
     });
     child.maximize();
     child.loadURL(url);
     setAppMenu(child);
+    enablePrintShortcut(child);
+    enableFindShortcut(child);
     childWindows.push(child);
 
     // Remove from array when closed
     child.on('closed', () => {
       childWindows = childWindows.filter((win) => win !== child);
+      try {
+        const deleted = clearUploads();
+        console.log(
+          '[INFO] Cleared uploads after child window closed:',
+          deleted.length,
+          'files.'
+        );
+      } catch (err) {
+        console.error(
+          '[ERROR] Failed to clear uploads after child window closed:',
+          err
+        );
+      }
     });
 
     return { action: 'deny' };

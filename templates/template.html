@@ -586,5 +586,182 @@
         <li>Only page numbers will appear at the footer</li>
       </ul>
     </div>
+
+  <script>
+if (window.electronAPI && window.electronAPI.onFind) {
+  window.electronAPI.onFind(() => {
+    if (document.getElementById('electron-search-bar')) {
+      document.getElementById('electron-search-input').focus();
+      return;
+    }
+
+    // --- Search Bar DOM ---
+    const bar = document.createElement('div');
+    bar.id = 'electron-search-bar';
+    bar.style = 'position:fixed;top:10px;right:30px;z-index:99999;background:#fff;border:1px solid #666;border-radius:4px;padding:6px 10px;display:flex;align-items:center;box-shadow:0 2px 8px #0002;gap:7px;';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'electron-search-input';
+    input.placeholder = 'Find in page...';
+    input.style = 'font-size:16px;padding:2px 8px;width:160px;border:1px solid #aaa;border-radius:3px;';
+    bar.appendChild(input);
+
+    const countSpan = document.createElement('span');
+    countSpan.id = 'electron-search-count';
+    countSpan.textContent = '0 / 0';
+    countSpan.style = 'margin:0 8px;font-size:14px;color:#333;';
+    bar.appendChild(countSpan);
+
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '&#8593;';
+    prevBtn.title = 'Previous';
+    prevBtn.style = 'font-size:14px;padding:2px 8px;border-radius:2px;';
+    bar.appendChild(prevBtn);
+
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '&#8595;';
+    nextBtn.title = 'Next';
+    nextBtn.style = 'font-size:14px;padding:2px 8px;border-radius:2px;';
+    bar.appendChild(nextBtn);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.title = 'Close';
+    closeBtn.style = 'font-size:16px;color:#b00;border:none;background:none;margin-left:6px;cursor:pointer;';
+    bar.appendChild(closeBtn);
+
+    document.body.appendChild(bar);
+    input.focus();
+
+    // --- Search Logic ---
+    let matches = [];
+    let curIndex = -1;
+    let lastTerm = '';
+
+    function removeHighlights() {
+      matches.forEach((el) => {
+        el.outerHTML = el.innerText;
+      });
+      matches = [];
+    }
+
+    function highlight(term) {
+      removeHighlights();
+      if (!term) {
+        countSpan.textContent = '0 / 0';
+        curIndex = -1;
+        return;
+      }
+      // Regex for all case-insensitive matches
+      const rx = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode: function(node) {
+          if (!node.parentNode) return NodeFilter.FILTER_REJECT;
+          if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(node.parentNode.tagName)) return NodeFilter.FILTER_REJECT;
+          if (node.parentNode.classList && node.parentNode.classList.contains('no-print')) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      let n, nodes = [];
+      while ((n = walker.nextNode())) nodes.push(n);
+
+      nodes.forEach((node) => {
+        let match;
+        let frag = document.createDocumentFragment();
+        let lastIdx = 0;
+        rx.lastIndex = 0;
+        while ((match = rx.exec(node.textContent))) {
+          if (match.index > lastIdx) {
+            frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx, match.index)));
+          }
+          const span = document.createElement('mark');
+          span.textContent = match[0];
+          span.className = 'electron-search-match';
+          frag.appendChild(span);
+          matches.push(span);
+          lastIdx = rx.lastIndex;
+        }
+        if (lastIdx < node.textContent.length) {
+          frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx)));
+        }
+        if (frag.childNodes.length) {
+          node.parentNode.replaceChild(frag, node);
+        }
+      });
+
+      if (matches.length) {
+        curIndex = 0;
+        updateUI();
+        scrollToCurrent();
+      } else {
+        countSpan.textContent = '0 / 0';
+        curIndex = -1;
+      }
+    }
+
+    function updateUI() {
+      countSpan.textContent = matches.length
+        ? (curIndex + 1) + ' / ' + matches.length
+        : '0 / 0';
+
+      matches.forEach((el, i) => {
+        el.style.background = (i === curIndex) ? '#ffe066' : '#fffd8a';
+        el.style.color = '#000';
+      });
+    }
+
+    function scrollToCurrent() {
+      if (curIndex >= 0 && matches[curIndex]) {
+        matches[curIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function next() {
+      if (!matches.length) return;
+      curIndex = (curIndex + 1) % matches.length;
+      updateUI();
+      scrollToCurrent();
+    }
+
+    function prev() {
+      if (!matches.length) return;
+      curIndex = (curIndex - 1 + matches.length) % matches.length;
+      updateUI();
+      scrollToCurrent();
+    }
+
+    // --- Event handlers ---
+    input.addEventListener('input', () => {
+      lastTerm = input.value.trim();
+      highlight(lastTerm);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === 'ArrowDown') next();
+      else if (e.key === 'ArrowUp') prev();
+      else if (e.key === 'Escape') close();
+    });
+
+    prevBtn.onclick = prev;
+    nextBtn.onclick = next;
+    closeBtn.onclick = close;
+
+    function close() {
+      removeHighlights();
+      bar.remove();
+    }
+
+    // Remove highlights if navigating away
+    window.addEventListener('beforeunload', removeHighlights);
+
+    // Autofocus if search bar is re-opened
+    setTimeout(() => input.focus(), 0);
+  });
+}
+</script>
+
+</body>
+
   </body>
 </html>

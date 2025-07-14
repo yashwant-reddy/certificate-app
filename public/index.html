@@ -14,7 +14,8 @@
         <form
           id="htmlForm"
           action="/preview"
-          method="GET"
+          enctype="multipart/form-data"
+          method="POST"
           autocomplete="off"
           style="position: relative"
         >
@@ -101,12 +102,40 @@
             name="noOfParametersSubmitted"
           />
 
-          <button type="submit" style="display: none">
+          <!-- File Upload Section (in-form, styled as before) -->
+          <div class="file-container" style="margin-top: 18px">
+            <label for="files">Upload FDR Data:</label>
+            <input
+              type="file"
+              id="files"
+              name="files"
+              accept=".csv"
+              multiple
+              hidden
+              onchange="handleFilesSelected()"
+            />
+            <label
+              for="files"
+              class="file-upload-btn"
+              tabindex="0"
+              aria-label="Choose CSV Files"
+              >Choose CSV Files</label
+            >
+            <ul id="file-list"></ul>
+          </div>
+
+          <!-- Preview/Generate Button, hidden until files are picked -->
+          <button
+            type="submit"
+            id="previewBtn"
+            style="display: none; margin-top: 16px"
+          >
             Generate HTML Preview
           </button>
         </form>
       </div>
-      <div class="file-container" style="display: none">
+      <!-- 
+      WIP: Common upload route
         <h1>Upload FDR Data</h1>
         <form id="uploadForm" enctype="multipart/form-data">
           <label for="files">Select CSV Files:</label>
@@ -125,7 +154,7 @@
             Clear Uploaded Files
           </button>
         </form>
-      </div>
+      </div> -->
     </div>
     <script src="main.js"></script>
   </body>

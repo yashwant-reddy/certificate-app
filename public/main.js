@@ -461,22 +461,22 @@ function clearUploads() {
   }
 }
 
-document
-  .getElementById('uploadForm')
-  .addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    try {
-      const res = await fetch('/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Upload failed');
-      alert('CSV files uploaded successfully.');
-    } catch (err) {
-      alert('Upload error.');
-    }
-  });
+// document
+//   .getElementById('uploadForm')
+//   .addEventListener('submit', async function (e) {
+//     e.preventDefault();
+//     const formData = new FormData(this);
+//     try {
+//       const res = await fetch('/upload', {
+//         method: 'POST',
+//         body: formData,
+//       });
+//       if (!res.ok) throw new Error('Upload failed');
+//       alert('CSV files uploaded successfully.');
+//     } catch (err) {
+//       alert('Upload error.');
+//     }
+//   });
 
 document
   .getElementById('htmlForm')
@@ -484,7 +484,6 @@ document
     e.preventDefault();
 
     const formData = new FormData(this);
-    const params = new URLSearchParams(formData);
     const button = previewButton;
 
     button.disabled = true;
@@ -492,14 +491,16 @@ document
     button.textContent = 'Generating...';
 
     try {
-      const res = await fetch('/preview?' + params.toString(), {
-        method: 'GET',
+      const res = await fetch('/preview', {
+        method: 'POST',
+        body: formData,
       });
 
       if (!res.ok) {
         alert('Preview failed');
       } else {
         const htmlContent = await res.text();
+        // Open the preview in a new tab
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const previewUrl = URL.createObjectURL(blob);
         window.open(previewUrl, '_blank');

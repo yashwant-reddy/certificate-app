@@ -25,6 +25,7 @@
   },
   "scripts": {
     "start": "electron .",
+    "prebuild": "node scripts/cleanUploads.js",
     "build": "electron-packager . certificate-app --icon=public/images/certificate.ico --out=dist --overwrite",
     "dev": "npm run stop && concurrently \"npm:watch-server\" \"npm:browser-sync\"",
     "stop": "npx kill-port 5001 5000 4000 3001",

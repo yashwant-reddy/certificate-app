@@ -66,10 +66,59 @@ function readCSVFile() {
 
 // Write certificate entry and return integer reference number
 function writeCertificateData(formData) {
+  // Read existing data (rows are arrays, without header)
   const currentData = readCSVFile();
-  const nextCounter = currentData.length + 1;
 
-  const timestamp = new Date().toISOString();
+  // Determine next certificateRefNo based on the last row, not just the count
+  let nextCounter = 1; // default starting value
+  if (currentData.length > 0) {
+    const lastRow = currentData[currentData.length - 1];
+    // Defensive: try to parse the previous ref number
+    const lastRef = parseInt(lastRow[1], 10);
+    if (!isNaN(lastRef)) {
+      nextCounter = lastRef + 1;
+    }
+  }
+
+  /* 
+  
+  How to Force Excel to Show Seconds
+    Change the Cell Format
+
+    Select the entire column (with timestamps).
+
+    Right-click → Format Cells.
+
+    Go to Custom.
+
+    Enter the format: yyyy-mm-dd hh:mm:ss
+    
+    Click OK. Now all times will show seconds!
+  
+  */
+  // Get IST timestamp
+  function getISTTimestamp() {
+    const now = new Date();
+    const options = {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    };
+    let parts = new Intl.DateTimeFormat('en-GB', options).formatToParts(now);
+    let obj = {};
+    parts.forEach(({ type, value }) => {
+      obj[type] = value;
+    });
+    // Assemble as YYYY-MM-DD HH:mm:ss
+    return `${obj.year}-${obj.month}-${obj.day} ${obj.hour}:${obj.minute}:${obj.second}`;
+  }
+
+  const timestamp = getISTTimestamp();
 
   const newRow = [
     timestamp,
@@ -99,7 +148,7 @@ function writeCertificateData(formData) {
     throw err;
   }
 
-  return nextCounter; // Just the integer
+  return nextCounter;
 }
 
 module.exports = {

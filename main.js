@@ -11,7 +11,7 @@ const childProcess = require('child_process');
 let serverProcess = null;
 let mainWindow = null;
 
-// --- Use this function to find server.js in both dev and prod
+// Find server.js for both dev and prod
 function getServerScript() {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'app', 'server.js');
@@ -20,20 +20,12 @@ function getServerScript() {
   }
 }
 
-function getNodeExec() {
-  // In production, node might not be present, so use the Electron EXE, but with our protection above!
-  if (app.isPackaged) {
-    return process.execPath;
-  } else {
-    return process.execPath;
-  }
-}
-
+// Start Express only once
 function startServer() {
   if (serverProcess) return;
 
   const serverScript = getServerScript();
-  const nodeExec = getNodeExec();
+  const nodeExec = process.execPath;
 
   serverProcess = childProcess.spawn(nodeExec, [serverScript], {
     stdio: 'inherit',
@@ -42,10 +34,13 @@ function startServer() {
   console.log('[INFO] Express server started as child process.');
 }
 
+// Main window creation: Always maximized
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 900,
+    maximizable: true,
+    resizable: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -53,13 +48,22 @@ function createWindow() {
   });
 
   mainWindow.loadURL('http://localhost:4000');
+  mainWindow.maximize();
+  mainWindow.focus();
 }
+
+// Ensure ALL new windows (popups, etc) are maximized
+app.on('browser-window-created', (event, window) => {
+  window.maximize();
+  window.setResizable(false);
+  window.focus();
+});
 
 app.whenReady().then(() => {
   if (!app.__started) {
     app.__started = true;
     startServer();
-    setTimeout(createWindow, 1200);
+    setTimeout(createWindow, 1200); // Delay to let Express start
   }
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

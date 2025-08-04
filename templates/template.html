@@ -258,6 +258,15 @@
         .no-break {
           page-break-inside: avoid !important;
         }
+
+        #electron-search-bar {
+        display: none !important;
+        }
+
+        .signature {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
       }
     </style>
   </head>
@@ -545,7 +554,7 @@
         <span>{{currentDate}}</span>
       </div>
 
-      <div
+      <div class="signature"
         style="
           border: 1px solid #000;
           padding: 10px;
@@ -588,6 +597,13 @@
     </div>
 
   <script>
+
+    // Always inject this as early as possible!
+const style = document.createElement('style');
+style.textContent = '@media print { #electron-search-bar { display: none !important; } }';
+document.head.appendChild(style);
+
+
 if (window.electronAPI && window.electronAPI.onFind) {
   window.electronAPI.onFind(() => {
     if (document.getElementById('electron-search-bar')) {

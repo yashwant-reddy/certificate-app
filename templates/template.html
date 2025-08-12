@@ -1,277 +1,295 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flight Report Preview</title>
-    <style>
-      /* Base style */
-      body {
-        font-family: Arial, sans-serif;
-        margin: 2cm 1cm;
-        padding: 0.5cm;
-        font-size: 10px;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flight Report Preview</title>
+  <style>
+    /* Base style */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2cm 1cm;
+      padding: 0.5cm;
+      font-size: 10px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .report-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 10px;
+    }
+
+    .section-left,
+    .section-right {
+      display: flex;
+      flex-direction: column;
+      margin-top: 10px;
+      width: 45%;
+      text-align: left;
+    }
+
+    .section-full {
+      display: flex;
+      flex-direction: column;
+      margin-top: 10px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .section-title {
+      font-weight: bold;
+      width: 140px;
+      margin-right: 5px;
+      font-size: 10px;
+    }
+
+    .section-three-title {
+      font-weight: bold;
+      width: 100%;
+      margin-right: 5px;
+      font-size: 10px;
+    }
+
+    .section-value {
+      margin-left: 5px;
+      flex-grow: 1;
+      font-size: 10px;
+    }
+
+    .section {
+      display: flex;
+      margin: 5px 0;
+    }
+
+    .wrapper {
+      display: flex;
+      justify-content: flex-start;
+      width: 100%;
+    }
+
+    .section-four {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 5px;
+      font-size: 12px;
+    }
+
+    td {
+      padding: 5px;
+      text-align: center;
+      border: 1px solid #000;
+    }
+
+    .logo-left img,
+    .logo-right img {
+      width: 40%;
+    }
+
+    .certificate-row td {
+      width: 33%;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .refrence-number {
+      text-align: right;
+    }
+
+    .remarks-row td,
+    .remarks-text td,
+    .certification-row tr td {
+      text-align: left;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    .page-two-box {
+      padding: 15px;
+      margin-top: 20px;
+    }
+
+    .heading-box {
+      border: 1px solid #000;
+      text-align: center;
+      padding: 5px;
+      background-color: #d3d3d3;
+      margin-bottom: 10px;
+      font-size: 11px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .key-section {
+      text-align: left;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    th {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background-color: #d3d3d3;
+      border: 1px solid #000;
+      font-weight: bold;
+    }
+
+    .readout-header {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background-color: #d3d3d3;
+      border: 1px solid #000;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .report-border {
+      border: 2px solid #222;
+      border-radius: 5px;
+      padding: 20px;
+      /* margin: 24px auto; */
+      max-width: 100%;
+      background: #fff;
+      box-shadow: 0 2px 8px #0002;
+    }
+
+    /* Page setup */
+    @page: first {
+      margin: 15mm 15mm 15mm 15mm;
+    }
+
+    @page {
+      size: A4;
+      margin: 1.5cm 1.5cm;
+      /* Smaller top/bottom (0.5cm), side margins 1cm */
+    }
+
+    @media print {
+
+      /* Print in Landscape format */
+      @page {
+        size: landscape;
       }
 
-      h1 {
-        text-align: center;
-        color: #333;
-        font-size: 14px;
-        margin-bottom: 10px;
+      /* Make the Table headers will never print at the bottom of a page; they will shift to the next page automatically. */
+      thead {
+        display: table-header-group;
+      }
+
+      tfoot {
+        display: table-footer-group;
+      }
+
+      table {
+        page-break-inside: auto;
+      }
+
+      tr,
+      th,
+      td {
+        page-break-inside: avoid !important;
+      }
+
+      tr {
+        page-break-after: auto;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        visibility: visible;
+        font-size: 9pt;
       }
 
       .report-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        padding: 0;
         margin: 0;
-        padding: 10px;
+        page-break-inside: avoid;
+      }
+
+      .page-two-box {
+        padding: 10px 10px;
+        margin: 10px 0 0 0;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      table,
+      td {
+        font-size: 8px;
+      }
+
+      h1 {
+        font-size: 14px;
+      }
+
+      .section-title,
+      .section-value {
+        font-size: 9px;
+      }
+
+      .wrapper {
+        flex-direction: row;
+        justify-content: space-between;
       }
 
       .section-left,
       .section-right {
-        display: flex;
-        flex-direction: column;
-        margin-top: 10px;
-        width: 45%;
-        text-align: left;
+        width: 48%;
       }
 
       .section-full {
-        display: flex;
-        flex-direction: column;
-        margin-top: 10px;
         width: 100%;
-        text-align: left;
-      }
-
-      .section-title {
-        font-weight: bold;
-        width: 140px;
-        margin-right: 5px;
-        font-size: 10px;
-      }
-
-      .section-three-title {
-        font-weight: bold;
-        width: 100%;
-        margin-right: 5px;
-        font-size: 10px;
-      }
-
-      .section-value {
-        margin-left: 5px;
-        flex-grow: 1;
-        font-size: 10px;
-      }
-
-      .section {
-        display: flex;
-        margin: 5px 0;
-      }
-
-      .wrapper {
-        display: flex;
-        justify-content: flex-start;
-        width: 100%;
-      }
-
-      .section-four {
-        width: 100%;
-        margin-top: 10px;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 5px;
-        font-size: 12px;
-      }
-
-      td {
-        padding: 5px;
-        text-align: center;
-        border: 1px solid #000;
-      }
-
-      .logo-left img,
-      .logo-right img {
-        width: 40%;
       }
 
       .certificate-row td {
-        width: 33%;
         text-align: center;
-        vertical-align: middle;
-      }
-
-      .refrence-number {
-        text-align: right;
       }
 
       .remarks-row td,
-      .remarks-text td,
-      .certification-row tr td {
+      .certification-row td {
         text-align: left;
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 8px;
       }
 
-      .page-break {
-        page-break-before: always;
+      .no-break {
+        page-break-inside: avoid !important;
       }
 
-      .page-two-box {
-        padding: 15px;
-        margin-top: 20px;
-      }
-
-      .heading-box {
-        border: 1px solid #000;
-        text-align: center;
-        padding: 5px;
-        background-color: #d3d3d3;
-        margin-bottom: 10px;
-        font-size: 11px;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-
-      .key-section {
-        text-align: left;
-        font-size: 10px;
-        line-height: 1.4;
-      }
-
-      th {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        background-color: #d3d3d3;
-        border: 1px solid #000;
-        font-weight: bold;
-      }
-
-      .readout-header {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        background-color: #d3d3d3;
-        border: 1px solid #000;
-        font-weight: bold;
-        text-align: center;
-      }
-
-      /* Page setup */
-      @page:first {
-        margin: 15mm 15mm 15mm 15mm;
-      }
-
-      @page {
-        size: A4;
-        margin: 1.5cm 1.5cm; /* Smaller top/bottom (0.5cm), side margins 1cm */
-      }
-
-      @media print {
-        /* Print in Landscape format */
-        @page {
-          size: landscape;
-        }
-        /* Make the Table headers will never print at the bottom of a page; they will shift to the next page automatically. */
-        thead {
-          display: table-header-group;
-        }
-        tfoot {
-          display: table-footer-group;
-        }
-
-        table {
-          page-break-inside: auto;
-        }
-        tr,
-        th,
-        td {
-          page-break-inside: avoid !important;
-        }
-        tr {
-          page-break-after: auto;
-        }
-
-        body {
-          margin: 0;
-          padding: 0;
-          visibility: visible;
-          font-size: 9pt;
-        }
-
-        .report-container {
-          padding: 0;
-          margin: 0;
-          page-break-inside: avoid;
-        }
-
-        .page-two-box {
-          padding: 10px 10px;
-          margin: 10px 0 0 0;
-        }
-
-        .no-print {
-          display: none !important;
-        }
-
-        table,
-        td {
-          font-size: 8px;
-        }
-
-        h1 {
-          font-size: 14px;
-        }
-
-        .section-title,
-        .section-value {
-          font-size: 9px;
-        }
-
-        .wrapper {
-          flex-direction: row;
-          justify-content: space-between;
-        }
-
-        .section-left,
-        .section-right {
-          width: 48%;
-        }
-
-        .section-full {
-          width: 100%;
-        }
-
-        .certificate-row td {
-          text-align: center;
-        }
-
-        .remarks-row td,
-        .certification-row td {
-          text-align: left;
-          padding-left: 10px;
-          padding-right: 10px;
-          font-size: 8px;
-        }
-
-        .no-break {
-          page-break-inside: avoid !important;
-        }
-
-        #electron-search-bar {
+      #electron-search-bar {
         display: none !important;
-        }
+      }
 
-        .signature {
+      .signature {
         break-inside: avoid;
         page-break-inside: avoid;
       }
-      }
-    </style>
-  </head>
+    }
+  </style>
+</head>
 
-  <body>
+<body>
+  <div class="report-border">
     <h1>Flight Data Recorder Readout Analysis Report</h1>
 
     <div class="report-container">
@@ -382,15 +400,12 @@
               <div>Karnataka 560048</div>
             </td>
             <td class="logo-right" colspan="2" style="text-align: center">
-              <div
-                style="
+              <div style="
                   display: inline-block;
                   text-align: left;
                   border: 1px solid black;
                   padding: 8px;
-                "
-                contenteditable="true"
-              >
+                " contenteditable="true">
                 SFO/QM/FORM NO: 004<br />
                 ISSUE NO: 2<br />
                 REVISION NO: 4<br />
@@ -456,328 +471,323 @@
           <tr class="certification-row">
             <td colspan="6" class="remarks-text">
               <p>
-                <strong
-                  >It is certified that the whole of the supplies and/or
+                <strong>It is certified that the whole of the supplies and/or
                   services supplied with this certificate have been inspected or
                   otherwise quality controlled and unless otherwise stated above
                   are in accordance with the requirements of the work order,
                   drawings and specifications relative thereto and conform in
                   all respects with the conditions and requirements of the
-                  contract.</strong
-                >
+                  contract.</strong>
               </p>
             </td>
           </tr>
         </table>
       </div>
     </div>
+  </div>
 
-    <!-- Footer Section that should appear on Page 2 -->
-    <div class="page-break"></div>
+  <!-- Footer Section that should appear on Page 2 -->
+  <div class="page-break"></div>
 
-    <div class="page-two-box">
-      <h5 class="heading-box">Parameter examination</h5>
+  <div class="page-two-box">
+    <h5 class="heading-box">Parameter examination</h5>
 
-      <div class="key-section">
-        <p><strong>Key:</strong></p>
-        <p>
-          <strong>S</strong> = Show: (Checked and seen to function – the
-          parameter was seen to operate and the values appear to be reasonable
-          for the phase of flight).
-        </p>
-        <p>
-          <strong>N/S</strong> = No Show: (Checked, but no movement or change of
-          state – the parameter was not seen to operate but the values seen
-          appear to be reasonable for the phase of flight).
-        </p>
-        <p>
-          <strong>N/R</strong> = Not Recorded: (Parameter is not fitted to this
-          aircraft – may be an optional parameter).
-        </p>
-        <p>
-          <strong>U/S</strong> = Unserviceable: (Checked and found to have a
-          reportable defect).
-        </p>
-      </div>
+    <div class="key-section">
+      <p><strong>Key:</strong></p>
+      <p>
+        <strong>S</strong> = Show: (Checked and seen to function – the
+        parameter was seen to operate and the values appear to be reasonable
+        for the phase of flight).
+      </p>
+      <p>
+        <strong>N/S</strong> = No Show: (Checked, but no movement or change of
+        state – the parameter was not seen to operate but the values seen
+        appear to be reasonable for the phase of flight).
+      </p>
+      <p>
+        <strong>N/R</strong> = Not Recorded: (Parameter is not fitted to this
+        aircraft – may be an optional parameter).
+      </p>
+      <p>
+        <strong>U/S</strong> = Unserviceable: (Checked and found to have a
+        reportable defect).
+      </p>
+    </div>
 
-      <!-- Table -->
-      <table>
-        <thead>
-          <tr>
-            <th>SL NO</th>
-            <th>PARAMETER NAME</th>
-            <th>PARAMETER TYPE</th>
-            <th>S</th>
-            <th>N/S</th>
-            <th>N/R</th>
-            <th>U/S</th>
-            <th>COMMENTS</th>
-          </tr>
-        </thead>
+    <!-- Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>SL NO</th>
+          <th>PARAMETER NAME</th>
+          <th>PARAMETER TYPE</th>
+          <th>S</th>
+          <th>N/S</th>
+          <th>N/R</th>
+          <th>U/S</th>
+          <th>COMMENTS</th>
+        </tr>
+      </thead>
 
-        <!-- the read out table are rendred here -->
-        <tbody>
-          {{dynamicReadoutTables}}
-        </tbody>
-      </table>
+      <!-- the read out table are rendred here -->
+      <tbody>
+        {{dynamicReadoutTables}}
+      </tbody>
+    </table>
 
-      <br /><br />
+    <br /><br />
 
-      <div class="key-section" style="text-align: left">
-        <p><strong>Comments:</strong></p>
-        <p contenteditable="true">
-          1. Status of recorded parameters (Sensor Inputs): Regular
-        </p>
-        <p contenteditable="true">
-          2. Quality of recorded data (Frame count): Good
-        </p>
-        <p contenteditable="true">3. Validity of recorded parameters: Good</p>
-        <p contenteditable="true">4. Status of FDR unit: Serviceable</p>
+    <div class="key-section" style="text-align: left">
+      <p><strong>Comments:</strong></p>
+      <p contenteditable="true">
+        1. Status of recorded parameters (Sensor Inputs): Regular
+      </p>
+      <p contenteditable="true">
+        2. Quality of recorded data (Frame count): Good
+      </p>
+      <p contenteditable="true">3. Validity of recorded parameters: Good</p>
+      <p contenteditable="true">4. Status of FDR unit: Serviceable</p>
 
-        <br />
+      <br />
 
-        <p><strong>Enclosures in Electronic format:</strong></p>
-        <p contenteditable="true">1. Readout Report in PDF Format</p>
-        <p contenteditable="true">2. Readout Report in Graphical formats</p>
-        <p contenteditable="true">3. This Readout Analysis Report</p>
-      </div>
-      <div
-        style="
+      <p><strong>Enclosures in Electronic format:</strong></p>
+      <p contenteditable="true">1. Readout Report in PDF Format</p>
+      <p contenteditable="true">2. Readout Report in Graphical formats</p>
+      <p contenteditable="true">3. This Readout Analysis Report</p>
+    </div>
+    <div style="
           display: flex;
           justify-content: left;
           align-items: center;
           padding: 4px;
-        "
-        contenteditable="true"
-      >
-        <strong>Report Generated on : </strong>
-        <span>{{currentDate}}</span>
-      </div>
+        " contenteditable="true">
+      <strong>Report Generated on : </strong>
+      <span>{{currentDate}}</span>
+    </div>
 
-      <div class="signature"
-        style="
+    <div class="signature" style="
           border: 1px solid #000;
           padding: 10px;
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-top: 20px;
-        "
-      >
-        <div style="text-align: center; width: 48%">
-          <p><strong>Readout report done by:</strong></p>
-          <img src="{{signature2}}" alt="achhuth signature" />
-          <div>
-            <p>Achhuth Reddy H M</p>
-            <p>Flight Data Analyst</p>
-            <p>Approval No: SFO/009</p>
-          </div>
+        ">
+      <div style="text-align: center; width: 48%">
+        <p><strong>Readout report done by:</strong></p>
+        <img src="{{signature2}}" alt="achhuth signature" />
+        <div>
+          <p>Achhuth Reddy H M</p>
+          <p>Flight Data Analyst</p>
+          <p>Approval No: SFO/009</p>
         </div>
+      </div>
 
-        <div style="text-align: center; width: 48%; padding-left: 20px">
-          <p><strong>Readout report verified by:</strong></p>
-          <img src="{{signature1}}" alt="sasi signature" />
-          <div>
-            <p>Sasi Rekhaa C</p>
-            <p>Test Report Signatory</p>
-            <p>Approval No: SFO/002</p>
-          </div>
+      <div style="text-align: center; width: 48%; padding-left: 20px">
+        <p><strong>Readout report verified by:</strong></p>
+        <img src="{{signature1}}" alt="sasi signature" />
+        <div>
+          <p>Sasi Rekhaa C</p>
+          <p>Test Report Signatory</p>
+          <p>Approval No: SFO/002</p>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Optional reminder for user before print -->
-    <div class="no-print" style="margin: 30px; font-size: 0.9rem; color: #333">
-      <strong>Before printing:</strong>
-      <ul>
-        <li>Uncheck "Headers and footers" in the print dialog</li>
-        <li>Enable "Background graphics" for logo and color display</li>
-        <li>Only page numbers will appear at the footer</li>
-      </ul>
-    </div>
+  <!-- Optional reminder for user before print -->
+  <div class="no-print" style="margin: 30px; font-size: 0.9rem; color: #333">
+    <strong>Before printing:</strong>
+    <ul>
+      <li>Uncheck "Headers and footers" in the print dialog</li>
+      <li>Enable "Background graphics" for logo and color display</li>
+      <li>Only page numbers will appear at the footer</li>
+    </ul>
+  </div>
 
   <script>
 
     // Always inject this as early as possible!
-const style = document.createElement('style');
-style.textContent = '@media print { #electron-search-bar { display: none !important; } }';
-document.head.appendChild(style);
+    const style = document.createElement('style');
+    style.textContent = '@media print { #electron-search-bar { display: none !important; } }';
+    document.head.appendChild(style);
 
 
-if (window.electronAPI && window.electronAPI.onFind) {
-  window.electronAPI.onFind(() => {
-    if (document.getElementById('electron-search-bar')) {
-      document.getElementById('electron-search-input').focus();
-      return;
-    }
-
-    // --- Search Bar DOM ---
-    const bar = document.createElement('div');
-    bar.id = 'electron-search-bar';
-    bar.style = 'position:fixed;top:10px;right:30px;z-index:99999;background:#fff;border:1px solid #666;border-radius:4px;padding:6px 10px;display:flex;align-items:center;box-shadow:0 2px 8px #0002;gap:7px;';
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.id = 'electron-search-input';
-    input.placeholder = 'Find in page...';
-    input.style = 'font-size:16px;padding:2px 8px;width:160px;border:1px solid #aaa;border-radius:3px;';
-    bar.appendChild(input);
-
-    const countSpan = document.createElement('span');
-    countSpan.id = 'electron-search-count';
-    countSpan.textContent = '0 / 0';
-    countSpan.style = 'margin:0 8px;font-size:14px;color:#333;';
-    bar.appendChild(countSpan);
-
-    const prevBtn = document.createElement('button');
-    prevBtn.innerHTML = '&#8593;';
-    prevBtn.title = 'Previous';
-    prevBtn.style = 'font-size:14px;padding:2px 8px;border-radius:2px;';
-    bar.appendChild(prevBtn);
-
-    const nextBtn = document.createElement('button');
-    nextBtn.innerHTML = '&#8595;';
-    nextBtn.title = 'Next';
-    nextBtn.style = 'font-size:14px;padding:2px 8px;border-radius:2px;';
-    bar.appendChild(nextBtn);
-
-    const closeBtn = document.createElement('button');
-    closeBtn.innerHTML = '&times;';
-    closeBtn.title = 'Close';
-    closeBtn.style = 'font-size:16px;color:#b00;border:none;background:none;margin-left:6px;cursor:pointer;';
-    bar.appendChild(closeBtn);
-
-    document.body.appendChild(bar);
-    input.focus();
-
-    // --- Search Logic ---
-    let matches = [];
-    let curIndex = -1;
-    let lastTerm = '';
-
-    function removeHighlights() {
-      matches.forEach((el) => {
-        el.outerHTML = el.innerText;
-      });
-      matches = [];
-    }
-
-    function highlight(term) {
-      removeHighlights();
-      if (!term) {
-        countSpan.textContent = '0 / 0';
-        curIndex = -1;
-        return;
-      }
-      // Regex for all case-insensitive matches
-      const rx = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-        acceptNode: function(node) {
-          if (!node.parentNode) return NodeFilter.FILTER_REJECT;
-          if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(node.parentNode.tagName)) return NodeFilter.FILTER_REJECT;
-          if (node.parentNode.classList && node.parentNode.classList.contains('no-print')) return NodeFilter.FILTER_REJECT;
-          return NodeFilter.FILTER_ACCEPT;
+    if (window.electronAPI && window.electronAPI.onFind) {
+      window.electronAPI.onFind(() => {
+        if (document.getElementById('electron-search-bar')) {
+          document.getElementById('electron-search-input').focus();
+          return;
         }
-      });
-      let n, nodes = [];
-      while ((n = walker.nextNode())) nodes.push(n);
 
-      nodes.forEach((node) => {
-        let match;
-        let frag = document.createDocumentFragment();
-        let lastIdx = 0;
-        rx.lastIndex = 0;
-        while ((match = rx.exec(node.textContent))) {
-          if (match.index > lastIdx) {
-            frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx, match.index)));
+        // --- Search Bar DOM ---
+        const bar = document.createElement('div');
+        bar.id = 'electron-search-bar';
+        bar.style = 'position:fixed;top:10px;right:30px;z-index:99999;background:#fff;border:1px solid #666;border-radius:4px;padding:6px 10px;display:flex;align-items:center;box-shadow:0 2px 8px #0002;gap:7px;';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'electron-search-input';
+        input.placeholder = 'Find in page...';
+        input.style = 'font-size:16px;padding:2px 8px;width:160px;border:1px solid #aaa;border-radius:3px;';
+        bar.appendChild(input);
+
+        const countSpan = document.createElement('span');
+        countSpan.id = 'electron-search-count';
+        countSpan.textContent = '0 / 0';
+        countSpan.style = 'margin:0 8px;font-size:14px;color:#333;';
+        bar.appendChild(countSpan);
+
+        const prevBtn = document.createElement('button');
+        prevBtn.innerHTML = '&#8593;';
+        prevBtn.title = 'Previous';
+        prevBtn.style = 'font-size:14px;padding:2px 8px;border-radius:2px;';
+        bar.appendChild(prevBtn);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.innerHTML = '&#8595;';
+        nextBtn.title = 'Next';
+        nextBtn.style = 'font-size:14px;padding:2px 8px;border-radius:2px;';
+        bar.appendChild(nextBtn);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.title = 'Close';
+        closeBtn.style = 'font-size:16px;color:#b00;border:none;background:none;margin-left:6px;cursor:pointer;';
+        bar.appendChild(closeBtn);
+
+        document.body.appendChild(bar);
+        input.focus();
+
+        // --- Search Logic ---
+        let matches = [];
+        let curIndex = -1;
+        let lastTerm = '';
+
+        function removeHighlights() {
+          matches.forEach((el) => {
+            el.outerHTML = el.innerText;
+          });
+          matches = [];
+        }
+
+        function highlight(term) {
+          removeHighlights();
+          if (!term) {
+            countSpan.textContent = '0 / 0';
+            curIndex = -1;
+            return;
           }
-          const span = document.createElement('mark');
-          span.textContent = match[0];
-          span.className = 'electron-search-match';
-          frag.appendChild(span);
-          matches.push(span);
-          lastIdx = rx.lastIndex;
+          // Regex for all case-insensitive matches
+          const rx = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+              if (!node.parentNode) return NodeFilter.FILTER_REJECT;
+              if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(node.parentNode.tagName)) return NodeFilter.FILTER_REJECT;
+              if (node.parentNode.classList && node.parentNode.classList.contains('no-print')) return NodeFilter.FILTER_REJECT;
+              return NodeFilter.FILTER_ACCEPT;
+            }
+          });
+          let n, nodes = [];
+          while ((n = walker.nextNode())) nodes.push(n);
+
+          nodes.forEach((node) => {
+            let match;
+            let frag = document.createDocumentFragment();
+            let lastIdx = 0;
+            rx.lastIndex = 0;
+            while ((match = rx.exec(node.textContent))) {
+              if (match.index > lastIdx) {
+                frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx, match.index)));
+              }
+              const span = document.createElement('mark');
+              span.textContent = match[0];
+              span.className = 'electron-search-match';
+              frag.appendChild(span);
+              matches.push(span);
+              lastIdx = rx.lastIndex;
+            }
+            if (lastIdx < node.textContent.length) {
+              frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx)));
+            }
+            if (frag.childNodes.length) {
+              node.parentNode.replaceChild(frag, node);
+            }
+          });
+
+          if (matches.length) {
+            curIndex = 0;
+            updateUI();
+            scrollToCurrent();
+          } else {
+            countSpan.textContent = '0 / 0';
+            curIndex = -1;
+          }
         }
-        if (lastIdx < node.textContent.length) {
-          frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx)));
+
+        function updateUI() {
+          countSpan.textContent = matches.length
+            ? (curIndex + 1) + ' / ' + matches.length
+            : '0 / 0';
+
+          matches.forEach((el, i) => {
+            el.style.background = (i === curIndex) ? '#ffe066' : '#fffd8a';
+            el.style.color = '#000';
+          });
         }
-        if (frag.childNodes.length) {
-          node.parentNode.replaceChild(frag, node);
+
+        function scrollToCurrent() {
+          if (curIndex >= 0 && matches[curIndex]) {
+            matches[curIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
+
+        function next() {
+          if (!matches.length) return;
+          curIndex = (curIndex + 1) % matches.length;
+          updateUI();
+          scrollToCurrent();
+        }
+
+        function prev() {
+          if (!matches.length) return;
+          curIndex = (curIndex - 1 + matches.length) % matches.length;
+          updateUI();
+          scrollToCurrent();
+        }
+
+        // --- Event handlers ---
+        input.addEventListener('input', () => {
+          lastTerm = input.value.trim();
+          highlight(lastTerm);
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === 'ArrowDown') next();
+          else if (e.key === 'ArrowUp') prev();
+          else if (e.key === 'Escape') close();
+        });
+
+        prevBtn.onclick = prev;
+        nextBtn.onclick = next;
+        closeBtn.onclick = close;
+
+        function close() {
+          removeHighlights();
+          bar.remove();
+        }
+
+        // Remove highlights if navigating away
+        window.addEventListener('beforeunload', removeHighlights);
+
+        // Autofocus if search bar is re-opened
+        setTimeout(() => input.focus(), 0);
       });
-
-      if (matches.length) {
-        curIndex = 0;
-        updateUI();
-        scrollToCurrent();
-      } else {
-        countSpan.textContent = '0 / 0';
-        curIndex = -1;
-      }
     }
-
-    function updateUI() {
-      countSpan.textContent = matches.length
-        ? (curIndex + 1) + ' / ' + matches.length
-        : '0 / 0';
-
-      matches.forEach((el, i) => {
-        el.style.background = (i === curIndex) ? '#ffe066' : '#fffd8a';
-        el.style.color = '#000';
-      });
-    }
-
-    function scrollToCurrent() {
-      if (curIndex >= 0 && matches[curIndex]) {
-        matches[curIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-
-    function next() {
-      if (!matches.length) return;
-      curIndex = (curIndex + 1) % matches.length;
-      updateUI();
-      scrollToCurrent();
-    }
-
-    function prev() {
-      if (!matches.length) return;
-      curIndex = (curIndex - 1 + matches.length) % matches.length;
-      updateUI();
-      scrollToCurrent();
-    }
-
-    // --- Event handlers ---
-    input.addEventListener('input', () => {
-      lastTerm = input.value.trim();
-      highlight(lastTerm);
-    });
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === 'ArrowDown') next();
-      else if (e.key === 'ArrowUp') prev();
-      else if (e.key === 'Escape') close();
-    });
-
-    prevBtn.onclick = prev;
-    nextBtn.onclick = next;
-    closeBtn.onclick = close;
-
-    function close() {
-      removeHighlights();
-      bar.remove();
-    }
-
-    // Remove highlights if navigating away
-    window.addEventListener('beforeunload', removeHighlights);
-
-    // Autofocus if search bar is re-opened
-    setTimeout(() => input.focus(), 0);
-  });
-}
-</script>
+  </script>
 
 </body>
 
-  </body>
+</body>
+
 </html>

@@ -1,140 +1,84 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Readout Certificate</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
 
-  <body>
-    <div class="container">
-      <div class="readout-container">
-        <h1>Readout Report Analysis and Certificate</h1>
-        <form
-          id="htmlForm"
-          action="/preview"
-          enctype="multipart/form-data"
-          method="POST"
-          autocomplete="off"
-          style="position: relative"
-        >
-          <!-- OPERATOR FIELD AND DROPDOWN -->
-          <div id="operatorContainer" style="position: relative">
-            <label for="operator">Operator:</label>
-            <input
-              type="text"
-              id="operator"
-              name="operator"
-              onfocus="showOperatorDropdown()"
-              onblur="hideOperatorDropdown()"
-              autocomplete="off"
-              placeholder="Enter Operator"
-            />
-            <div
-              id="operatorDropdown"
-              class="dropdown-list"
-              style="display: none"
-            ></div>
-          </div>
-          <!-- A/C Reg input and dropdown container -->
-          <div id="acRegContainer" style="position: relative">
-            <label for="acReg">A/C Reg:</label>
-            <input
-              type="text"
-              id="acReg"
-              name="acReg"
-              required
-              onfocus="showAcRegDropdown()"
-              onblur="hideAcRegDropdown()"
-              autocomplete="off"
-              placeholder="Enter A/C Reg"
-            />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Readout Certificate</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
 
-            <div
-              id="acRegDropdown"
-              class="dropdown-list"
-              style="display: none"
-            ></div>
-          </div>
+<body>
+  <div class="container">
+    <div class="readout-container">
+      <h1>Readout Report Analysis and Certificate</h1>
+      <form id="htmlForm" action="/preview" enctype="multipart/form-data" method="POST" autocomplete="off"
+        style="position: relative">
+        <!-- OPERATOR FIELD AND DROPDOWN -->
+        <div id="operatorContainer" style="position: relative">
+          <label for="operator">Operator:</label>
+          <input type="text" id="operator" name="operator" onfocus="showOperatorDropdown()"
+            onblur="hideOperatorDropdown()" autocomplete="off" placeholder="Enter Operator" />
+          <div id="operatorDropdown" class="dropdown-list" style="display: none"></div>
+        </div>
+        <!-- A/C Reg input and dropdown container -->
+        <div id="acRegContainer" style="position: relative">
+          <label for="acReg">A/C Reg:</label>
+          <input type="text" id="acReg" name="acReg" required onfocus="showAcRegDropdown()" onblur="hideAcRegDropdown()"
+            autocomplete="off" placeholder="Enter A/C Reg" />
 
-          <!-- Auto-filled but editable fields -->
-          <label for="typeOfAC">Type of A/C:</label>
-          <input type="text" id="typeOfAC" name="typeOfAC" readonly />
+          <div id="acRegDropdown" class="dropdown-list" style="display: none"></div>
+        </div>
 
-          <label for="fdrPnSn">FDR P/N-S/N:</label>
-          <input type="text" id="fdrPnSn" name="fdrPnSn" readonly />
+        <!-- Auto-filled but editable fields -->
+        <label for="typeOfAC">Type of A/C:</label>
+        <input type="text" id="typeOfAC" name="typeOfAC" />
 
-          <label for="dataReceivedFrom">Data Received From:</label>
-          <input type="text" id="dataReceivedFrom" name="dataReceivedFrom" />
+        <label for="fdrPnSn">FDR P/N-S/N:</label>
+        <input type="text" id="fdrPnSn" name="fdrPnSn" />
 
-          <label for="dateOfDumping">Date of Dumping:</label>
-          <input type="text" id="dateOfDumping" name="dateOfDumping" />
+        <label for="dataReceivedFrom">Data Received From:</label>
+        <input type="text" id="dataReceivedFrom" name="dataReceivedFrom" />
 
-          <label for="dateOfFlight">Date of Flight:</label>
-          <input type="text" id="dateOfFlight" name="dateOfFlight" />
+        <label for="dateOfDumping">Date of Dumping:</label>
+        <input type="text" id="dateOfDumping" name="dateOfDumping" />
 
-          <label for="flightSector">Flight Sector:</label>
-          <input type="text" id="flightSector" name="flightSector" />
+        <label for="dateOfFlight">Date of Flight:</label>
+        <input type="text" id="dateOfFlight" name="dateOfFlight" />
 
-          <label for="natureOfReadout">Nature of Readout:</label>
-          <input type="text" id="natureOfReadout" name="natureOfReadout" />
+        <label for="flightSector">Flight Sector:</label>
+        <input type="text" id="flightSector" name="flightSector" />
 
-          <label for="workOrderNo">Work Order No:</label>
-          <input type="text" id="workOrderNo" name="workOrderNo" />
+        <label for="natureOfReadout">Nature of Readout:</label>
+        <input type="text" id="natureOfReadout" name="natureOfReadout" />
 
-          <label for="lflRefNo">LFL Ref No:</label>
-          <input type="text" id="lflRefNo" name="lflRefNo" />
+        <label for="workOrderNo">Work Order No:</label>
+        <input type="text" id="workOrderNo" name="workOrderNo" />
 
-          <label for="noOfParametersRecorded">No of Parameters Recorded:</label>
-          <input
-            type="text"
-            id="noOfParametersRecorded"
-            name="noOfParametersRecorded"
-          />
+        <label for="lflRefNo">LFL Ref No:</label>
+        <input type="text" id="lflRefNo" name="lflRefNo" />
 
-          <label for="noOfParametersSubmitted"
-            >No of Parameters Submitted for Evaluation:</label
-          >
-          <input
-            type="text"
-            id="noOfParametersSubmitted"
-            name="noOfParametersSubmitted"
-          />
+        <label for="noOfParametersRecorded">No of Parameters Recorded:</label>
+        <input type="text" id="noOfParametersRecorded" name="noOfParametersRecorded" />
 
-          <!-- File Upload Section (in-form, styled as before) -->
-          <div class="file-container" style="margin-top: 18px">
-            <label for="files">Upload FDR Data:</label>
-            <input
-              type="file"
-              id="files"
-              name="files"
-              accept=".csv"
-              multiple
-              hidden
-              onchange="handleFilesSelected()"
-            />
-            <label
-              for="files"
-              class="file-upload-btn"
-              tabindex="0"
-              aria-label="Choose CSV Files"
-              >Choose CSV Files</label
-            >
-            <ul id="file-list"></ul>
-          </div>
+        <label for="noOfParametersSubmitted">No of Parameters Submitted for Evaluation:</label>
+        <input type="text" id="noOfParametersSubmitted" name="noOfParametersSubmitted" />
 
-          <!-- Preview/Generate Button, hidden until files are picked -->
-          <button
-            type="submit"
-            id="previewBtn"
-            style="display: none; margin-top: 16px"
-          >
-            Generate HTML Preview
-          </button>
-        </form>
-      </div>
-      <!-- 
+        <!-- File Upload Section (in-form, styled as before) -->
+        <div class="file-container" style="margin-top: 18px">
+          <label for="files">Upload FDR Data:</label>
+          <input type="file" id="files" name="files" accept=".csv" multiple hidden onchange="handleFilesSelected()" />
+          <label for="files" class="file-upload-btn" tabindex="0" aria-label="Choose CSV Files">Choose CSV Files</label>
+          <ul id="file-list"></ul>
+        </div>
+
+        <!-- Preview/Generate Button, hidden until files are picked -->
+        <button type="submit" id="previewBtn" style="display: none; margin-top: 16px">
+          Generate HTML Preview
+        </button>
+      </form>
+    </div>
+    <!-- 
       WIP: Common upload route
         <h1>Upload FDR Data</h1>
         <form id="uploadForm" enctype="multipart/form-data">
@@ -155,7 +99,8 @@
           </button>
         </form>
       </div> -->
-    </div>
-    <script src="script.js"></script>
-  </body>
+  </div>
+  <script src="script.js"></script>
+</body>
+
 </html>

@@ -1,5 +1,4 @@
 console.log('==> server.js running as', process.argv);
-
 console.log('[INFO] certificate-app.exe started!');
 
 const express = require('express');
@@ -9,16 +8,35 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Middleware
+// --- Static: public/ ---
 const publicPath = path.join(__dirname, 'public');
 console.log('[INFO] Serving static files from:', publicPath);
-
 app.use(express.static(publicPath));
 
-// Log every static file request (optional, for deeper debugging)
+// --- Static: data/ from project root, exposed at /data ---
+const dataDir = path.join(__dirname, 'data');
+if (fs.existsSync(dataDir)) {
+  console.log('[INFO] Exposing data directory at /data:', dataDir);
+  app.use(
+    '/data',
+    express.static(dataDir, {
+      fallthrough: true,
+      setHeaders: (res, filePath) => {
+        // Avoid stale JSON in Electron/browser caches
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        if (path.extname(filePath).toLowerCase() === '.json') {
+          res.type('application/json; charset=utf-8');
+        }
+      },
+    })
+  );
+} else {
+  console.warn('[WARN] data directory not found:', dataDir);
+}
+
+// Log every static/file request (optional, for deeper debugging)
 app.use((req, res, next) => {
   if (req.url.startsWith('/')) {
-    // Log every static request path
     console.log('[INFO] Request:', req.method, req.url);
   }
   next();
@@ -26,12 +44,8 @@ app.use((req, res, next) => {
 
 app.use(express.urlencoded({ extended: true }));
 
-// Check if route files exist before requiring
-const routeFiles = [
-  './routes/upload',
-  './routes/preview',
-  './routes/clearUploads',
-];
+// --- Routes (conditionally load if present) ---
+const routeFiles = ['./routes/upload', './routes/preview', './routes/clearUploads'];
 
 routeFiles.forEach((routePath) => {
   try {
@@ -40,6 +54,7 @@ routeFiles.forEach((routePath) => {
       console.error(`[ERROR] Route file missing: ${fullPath}`);
     } else {
       console.log(`[INFO] Loading route: ${routePath}`);
+      // mount path becomes "/upload", "/preview", "/clearUploads"
       app.use(routePath.replace('./routes', ''), require(routePath));
     }
   } catch (err) {
@@ -47,7 +62,7 @@ routeFiles.forEach((routePath) => {
   }
 });
 
-// Start server
+// --- Start server ---
 app.listen(PORT, () => {
   console.log(`[INFO] Server running at http://localhost:${PORT}`);
 });

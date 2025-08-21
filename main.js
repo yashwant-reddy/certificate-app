@@ -4,11 +4,15 @@ if (process.argv.length > 1 && process.argv[1].endsWith('server.js')) {
   return; // Prevent Electron app logic!
 }
 
-const { app, BrowserWindow, Menu, ipcMain } = require('electron'); // ipcMain added
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron'); // globalShortcut removed
 const path = require('path');
 const childProcess = require('child_process');
+const fs = require('fs');
 
 const clearUploads = require('./utils/clearUploads');
+
+// === NEW: import peek/commit ===
+const { getNextRefNumber, writeCertificateData } = require('./utils/writeCertificateDetails');
 
 let serverProcess = null;
 let mainWindow = null;
@@ -25,6 +29,54 @@ ipcMain.handle('clear-uploads', async () => {
     console.error('[ERROR] Failed to clear uploads via IPC:', err);
     return { success: false, error: err.message };
   }
+});
+
+// === Controlled print IPC ===
+// Renderer calls this to run the full flow: assign number -> inject -> save PDF -> commit CSV
+ipcMain.handle('print-and-commit', async (event, formData) => {
+  const win = require('electron').BrowserWindow.fromWebContents(event.sender);
+  if (!win) throw new Error('No window');
+
+  const refNo = getNextRefNumber();
+
+  // Inject number into DOM (if template defines window.__setCertificateRefNo)
+  await win.webContents.executeJavaScript(
+    `window.__setCertificateRefNo && window.__setCertificateRefNo(${refNo});`,
+    true
+  );
+
+  const { canceled, filePath } = await dialog.showSaveDialog(win, {
+    title: 'Save Certificate PDF',
+    defaultPath: `Certificate_${refNo}.pdf`,
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+  });
+  if (canceled || !filePath) {
+    // Revert (optional)
+    await win.webContents.executeJavaScript(
+      `window.__setCertificateRefNo && window.__setCertificateRefNo(null);`,
+      true
+    );
+    console.warn('[PRINT] Save dialog cancelled – no commit');
+    return { ok: false, reason: 'save-cancelled' };
+  }
+
+  const pdfBuffer = await win.webContents.printToPDF({
+    marginsType: 1,
+    printBackground: true,
+    landscape: false,
+    pageSize: 'A4',
+  });
+  fs.writeFileSync(filePath, pdfBuffer);
+
+  console.log('[PRINT] JIT refNo =', refNo);
+  console.log('[PRINT] filePath chosen =', filePath);
+  console.log('[PRINT] Committing CSV…');
+
+  // Commit AFTER successful save
+  const committedRef = writeCertificateData(formData, refNo);
+  console.log('[PRINT] Committed CSV with refNo =', committedRef);
+
+  return { ok: true, pdfPath: filePath, refNo: committedRef };
 });
 
 // Find server.js for both dev and prod
@@ -59,13 +111,15 @@ function setAppMenu(window) {
         {
           label: 'Print',
           accelerator: process.platform === 'darwin' ? 'Cmd+P' : 'Ctrl+P',
+          // Send our controlled flow trigger (NOT window.print/webContents.print)
           click: () => {
-            window.webContents.executeJavaScript('window.print()');
+            console.log('[MENU] Print clicked -> sending hotkey-print');
+            window.webContents.send('hotkey-print');
           },
         },
         { type: 'separator' },
-        { role: 'close' }, // Close window (Ctrl+W or Cmd+W)
-        { role: 'quit' }, // Quit app (Ctrl+Q or Cmd+Q)
+        { role: 'close' },
+        { role: 'quit' },
       ],
     },
     {
@@ -126,33 +180,12 @@ function setAppMenu(window) {
   window.setMenu(menu);
 }
 
-// Print keboard shortcut available for all
-function enablePrintShortcut(window) {
-  window.webContents.on('before-input-event', (event, input) => {
-    const isPrint =
-      (process.platform === 'darwin' &&
-        input.meta &&
-        input.key.toLowerCase() === 'p') ||
-      (process.platform !== 'darwin' &&
-        input.control &&
-        input.key.toLowerCase() === 'p');
-    if (isPrint) {
-      window.webContents.print();
-      event.preventDefault();
-    }
-  });
-}
-
-// --- NEW: Enable Find Shortcut (Ctrl+F / Cmd+F) ---
+// Enable Find Shortcut (Ctrl+F / Cmd+F)
 function enableFindShortcut(window) {
   window.webContents.on('before-input-event', (event, input) => {
     const isFind =
-      (process.platform === 'darwin' &&
-        input.meta &&
-        input.key.toLowerCase() === 'f') ||
-      (process.platform !== 'darwin' &&
-        input.control &&
-        input.key.toLowerCase() === 'f');
+      (process.platform === 'darwin' && input.meta && input.key.toLowerCase() === 'f') ||
+      (process.platform !== 'darwin' && input.control && input.key.toLowerCase() === 'f');
     if (isFind) {
       window.webContents.send('trigger-find');
       event.preventDefault();
@@ -168,6 +201,8 @@ function createWindow() {
     maximizable: true,
     resizable: true,
     webPreferences: {
+      // Use preload to expose safe IPC + DOM glue
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -178,8 +213,7 @@ function createWindow() {
   mainWindow.loadURL('http://localhost:4000');
   setAppMenu(mainWindow);
 
-  // --- Attach both print and find shortcuts ---
-  enablePrintShortcut(mainWindow);
+  // NOTE: Removed enablePrintShortcut(mainWindow) to avoid double triggers
   enableFindShortcut(mainWindow);
 
   // When main window closes, close all child windows
@@ -198,19 +232,19 @@ function createWindow() {
       maximizable: true,
       resizable: true,
       webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
         nodeIntegration: false,
         contextIsolation: true,
-        preload: path.join(__dirname, 'preload.js'),
       },
     });
     child.maximize();
     child.loadURL(url);
     setAppMenu(child);
-    enablePrintShortcut(child);
+
+    // NOTE: Removed enablePrintShortcut(child) to avoid double triggers
     enableFindShortcut(child);
     childWindows.push(child);
 
-    // Remove from array when closed
     child.on('closed', () => {
       childWindows = childWindows.filter((win) => win !== child);
       try {
@@ -221,10 +255,7 @@ function createWindow() {
           'files.'
         );
       } catch (err) {
-        console.error(
-          '[ERROR] Failed to clear uploads after child window closed:',
-          err
-        );
+        console.error('[ERROR] Failed to clear uploads after child window closed:', err);
       }
     });
 
@@ -253,6 +284,7 @@ app.whenReady().then(() => {
     startServer();
     setTimeout(createWindow, 1200); // Delay to let Express start
   }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
@@ -261,11 +293,7 @@ app.whenReady().then(() => {
 app.on('before-quit', () => {
   try {
     const deleted = clearUploads();
-    console.log(
-      '[INFO] Cleared uploads before quitting:',
-      deleted.length,
-      'files.'
-    );
+    console.log('[INFO] Cleared uploads before quitting:', deleted.length, 'files.');
   } catch (err) {
     console.error('[ERROR] Failed to clear uploads before quitting:', err);
   }

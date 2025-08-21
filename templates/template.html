@@ -298,27 +298,27 @@
         <div class="section-left">
           <div class="section">
             <div class="section-title">Work Order No:</div>
-            <div class="section-value" contenteditable="true">
+            <div class="section-value" id="workOrderNo" contenteditable="true">
               {{workOrderNo}}
             </div>
           </div>
           <div class="section">
             <div class="section-title">A/C Reg:</div>
-            <div class="section-value" contenteditable="true">{{acReg}}</div>
+            <div class="section-value" id="acReg" contenteditable="true">{{acReg}}</div>
           </div>
           <div class="section">
             <div class="section-title">Type of A/C:</div>
-            <div class="section-value" contenteditable="true">{{typeOfAC}}</div>
+            <div class="section-value" id="typeOfAC" contenteditable="true">{{typeOfAC}}</div>
           </div>
           <div class="section">
             <div class="section-title">Date of Dumping:</div>
-            <div class="section-value" contenteditable="true">
+            <div class="section-value" id="dateOfDumping" contenteditable="true">
               {{dateOfDumping}}
             </div>
           </div>
           <div class="section">
             <div class="section-title">Data Received From:</div>
-            <div class="section-value" contenteditable="true">
+            <div class="section-value" id="dataReceivedFrom" contenteditable="true">
               {{dataReceivedFrom}}
             </div>
           </div>
@@ -328,27 +328,27 @@
         <div class="section-right">
           <div class="section">
             <div class="section-title">Operator:</div>
-            <div class="section-value" contenteditable="true">{{operator}}</div>
+            <div class="section-value" id="operator" contenteditable="true">{{operator}}</div>
           </div>
           <div class="section">
             <div class="section-title">FDR P/N-S/N:</div>
-            <div class="section-value" contenteditable="true">{{fdrPnSn}}</div>
+            <div class="section-value" id="fdrPnSn" contenteditable="true">{{fdrPnSn}}</div>
           </div>
           <div class="section">
             <div class="section-title">Date of Flight:</div>
-            <div class="section-value" contenteditable="true">
+            <div class="section-value" id="dateOfFlight" contenteditable="true">
               {{dateOfFlight}}
             </div>
           </div>
           <div class="section">
             <div class="section-title">Flight Sector:</div>
-            <div class="section-value" contenteditable="true">
+            <div class="section-value" id="flightSector" contenteditable="true">
               {{flightSector}}
             </div>
           </div>
           <div class="section">
             <div class="section-title">Nature of Readout:</div>
-            <div class="section-value" contenteditable="true">
+            <div class="section-value" id="natureOfReadout" contenteditable="true">
               {{natureOfReadout}}
             </div>
           </div>
@@ -364,15 +364,15 @@
         </div>
         <div class="section">
           <div class="section-title">LFL Ref No:</div>
-          <div class="section-value" contenteditable="true">{{lflRefNo}}</div>
+          <div class="section-value" id="lflRefNo" contenteditable="true">{{lflRefNo}}</div>
         </div>
         <div class="section">
           <div class="section-title">Software Type:</div>
-          <div class="section-value" contenteditable="true">FliSAFE</div>
+          <div class="section-value" id="softwareType" contenteditable="true">FliSAFE</div>
         </div>
         <div class="section">
           <div class="section-title">No of Parameters Recorded:</div>
-          <div class="section-value" contenteditable="true">
+          <div class="section-value" id="noOfParametersRecorded" contenteditable="true">
             {{noOfParametersRecorded}}
           </div>
         </div>
@@ -380,7 +380,7 @@
           <div class="section-title">
             No of Parameters Submitted for Evaluation:
           </div>
-          <div class="section-value" contenteditable="true">
+          <div class="section-value" id="noOfParametersSubmitted" contenteditable="true">
             {{noOfParametersSubmitted}}
           </div>
         </div>
@@ -401,11 +401,11 @@
             </td>
             <td class="logo-right" colspan="2" style="text-align: center">
               <div style="
-                  display: inline-block;
-                  text-align: left;
-                  border: 1px solid black;
-                  padding: 8px;
-                " contenteditable="true">
+                display: inline-block;
+                text-align: left;
+                border: 1px solid black;
+                padding: 8px;
+              " contenteditable="true">
                 SFO/QM/FORM NO: 004<br />
                 ISSUE NO: 2<br />
                 REVISION NO: 4<br />
@@ -418,8 +418,9 @@
             <td colspan="2" rowspan="2"></td>
             <td colspan="2" rowspan="2">Certificate of Compliance</td>
             <td colspan="2">
-              <div class="refrence-number" contenteditable="true">
-                Certificate Ref No: SFO/{{certificateRefNo}}
+              <div class="refrence-number">
+                Certificate Ref No: SFO/
+                <span id="certificateRefNo" contenteditable="true">{{certificateRefNo}}</span>
               </div>
             </td>
           </tr>
@@ -437,17 +438,17 @@
 
           <!-- Row 4 -->
           <tr class="table-row-four">
-            <td contenteditable="true">1</td>
-            <td contenteditable="true">Enter</td>
-            <td contenteditable="true">{{partNumber}}</td>
-            <td contenteditable="true">1</td>
-            <td contenteditable="true">{{serialNumber}}</td>
-            <td contenteditable="true">Readout Report</td>
+            <td id="itemNo" contenteditable="true">1</td>
+            <td id="itemDesc" contenteditable="true">Enter</td>
+            <td id="partNumber" contenteditable="true">{{partNumber}}</td>
+            <td id="qty" contenteditable="true">1</td>
+            <td id="serialNumber" contenteditable="true">{{serialNumber}}</td>
+            <td id="statusWork" contenteditable="true">Readout Report</td>
           </tr>
 
           <!-- 5th Row with Remarks and Comments -->
           <tr class="remarks-row">
-            <td colspan="6" class="remarks-text" contenteditable="true">
+            <td colspan="6" class="remarks-text" id="remarks" contenteditable="true">
               <p><strong>Regulatory Compliance, if any:</strong></p>
               <p>
                 Certified that the Flight data transcription is carried out in

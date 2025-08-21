@@ -1,10 +1,11 @@
+// utils/certificateRefStore.js
 const fs = require('fs');
 const path = require('path');
 const { stringify } = require('csv-stringify/sync');
 
 // --- NETWORK AND LOCAL PATHS ---
-// const networkDataDir = '\\\\10.15.8.151\\Nest Application\\certificate-app\\data'; // <--- adjust share path as needed
-const networkDataDir = '\\\\10.15.0.85\\BLR-ABU-Data\\Nest Application\\certificate-app\\data'; // <--- adjust share path as needed
+// const networkDataDir = '\\\\10.15.8.151\\Nest Application\\certificate-app\\data';
+const networkDataDir = '\\\\10.15.0.85\\BLR-ABU-Data\\Nest Application\\certificate-app\\data';
 const networkCsvFilePath = path.join(networkDataDir, 'CertificateRefNumberDetails.csv');
 
 const localDataDir = path.join(process.cwd(), 'data');
@@ -29,22 +30,20 @@ const csvHeaders = [
 ];
 
 // --- PATH DETECTION AND FALLBACK ---
-function getCsvFilePath() {
+function ensureCsvAndGetPath() {
   // Try network path first
   try {
     if (!fs.existsSync(networkDataDir)) {
       fs.mkdirSync(networkDataDir, { recursive: true });
     }
-    // --- Try to create the file with headers if missing
     if (!fs.existsSync(networkCsvFilePath)) {
       const headerRow = stringify([csvHeaders]);
       fs.writeFileSync(networkCsvFilePath, headerRow);
       console.log(`[INFO] Created new CSV with headers on network: ${networkCsvFilePath}`);
     }
-    // Test R/W now that file is ensured
     fs.accessSync(networkCsvFilePath, fs.constants.R_OK | fs.constants.W_OK);
     return networkCsvFilePath;
-  } catch (err) {
+  } catch {
     // fallback to local
     try {
       if (!fs.existsSync(localDataDir)) {
@@ -55,6 +54,7 @@ function getCsvFilePath() {
         fs.writeFileSync(localCsvFilePath, headerRow);
         console.log(`[INFO] Created new CSV with headers locally: ${localCsvFilePath}`);
       }
+      fs.accessSync(localCsvFilePath, fs.constants.R_OK | fs.constants.W_OK);
     } catch (e) {
       console.error(`[ERROR] Creating local data directory or CSV: ${localDataDir}`, e);
     }
@@ -62,36 +62,12 @@ function getCsvFilePath() {
   }
 }
 
-
-// --- READ CSV DATA ---
-function readCSVFile() {
-  const filePath = getCsvFilePath();
-
-  if (!fs.existsSync(filePath)) {
-    try {
-      // Create file with headers
-      const headerRow = stringify([csvHeaders]);
-      fs.writeFileSync(filePath, headerRow);
-      console.log(`[INFO] Created new CSV with headers: ${filePath}`);
-      return [];
-    } catch (err) {
-      console.error(`[ERROR] Creating CSV file: ${filePath}`, err);
-      return [];
-    }
-  }
-
-  try {
-    const raw = fs.readFileSync(filePath, 'utf-8').trim();
-    if (!raw) {
-      console.warn(`[WARN] CSV file is empty: ${filePath}`);
-      return [];
-    }
-    const rows = raw.split('\n').slice(1); // skip header
-    return rows.map((line) => line.split(','));
-  } catch (err) {
-    console.error(`[ERROR] Reading CSV file: ${filePath}`, err);
-    return [];
-  }
+function readAllRows(filePath) {
+  if (!fs.existsSync(filePath)) return [];
+  const raw = fs.readFileSync(filePath, 'utf-8').trim();
+  if (!raw) return [];
+  const lines = raw.split('\n').slice(1); // skip header
+  return lines.filter(Boolean).map((line) => line.split(','));
 }
 
 // --- IST Timestamp ---
@@ -109,25 +85,49 @@ function getISTTimestamp() {
   };
   let parts = new Intl.DateTimeFormat('en-GB', options).formatToParts(now);
   let obj = {};
-  parts.forEach(({ type, value }) => {
-    obj[type] = value;
-  });
-  // Assemble as YYYY-MM-DD HH:mm:ss
+  parts.forEach(({ type, value }) => (obj[type] = value));
   return `${obj.year}-${obj.month}-${obj.day} ${obj.hour}:${obj.minute}:${obj.second}`;
 }
 
-// --- MAIN EXPORTED METHOD ---
-function writeCertificateData(formData) {
-  const filePath = getCsvFilePath();
-  const currentData = readCSVFile();
+/**
+ * Peek the next certificate number WITHOUT writing anything.
+ * Safe to call to display a hint in UI like "Will assign on print".
+ */
+function getNextRefNumber() {
+  const filePath = ensureCsvAndGetPath();
+  const rows = readAllRows(filePath);
+  if (rows.length === 0) return 1;
 
-  // Determine next certificateRefNo based on last valid row
-  let nextCounter = 1;
-  if (currentData.length > 0) {
-    const lastRow = currentData[currentData.length - 1];
-    const lastRef = parseInt(lastRow[1], 10);
-    if (!isNaN(lastRef)) {
-      nextCounter = lastRef + 1;
+  // last valid numeric ref from last non-empty row
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const n = parseInt(rows[i][1], 10);
+    if (!Number.isNaN(n)) return n + 1;
+  }
+  return 1;
+}
+
+/**
+ * Commit a row to the CSV.
+ * If refNoOverride is provided, that exact number is written (use for print-time assignment).
+ */
+function writeCertificateData(formData, refNoOverride) {
+  const filePath = ensureCsvAndGetPath();
+  const rows = readAllRows(filePath);
+
+  let nextCounter;
+  if (typeof refNoOverride === 'number' && refNoOverride > 0) {
+    nextCounter = refNoOverride;
+  } else {
+    // fallback: compute from last row
+    nextCounter = 1;
+    if (rows.length > 0) {
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const lastRef = parseInt(rows[i][1], 10);
+        if (!Number.isNaN(lastRef)) {
+          nextCounter = lastRef + 1;
+          break;
+        }
+      }
     }
   }
 
@@ -150,19 +150,13 @@ function writeCertificateData(formData) {
     formData.noOfParametersSubmitted || '',
   ];
 
-  try {
-    const csvRow = stringify([newRow]);
-    fs.appendFileSync(filePath, csvRow);
-    console.log(`[INFO] Appended new row to CSV: ${filePath}`);
-    console.log('[INFO] Row data:', newRow);
-  } catch (err) {
-    console.error(`[ERROR] Appending row to CSV: ${filePath}`, err);
-    throw err;
-  }
-
+  const csvRow = stringify([newRow]);
+  fs.appendFileSync(filePath, csvRow);
+  console.log(`[INFO] Appended new certificate row #${nextCounter} to: ${filePath}`);
   return nextCounter;
 }
 
 module.exports = {
+  getNextRefNumber,
   writeCertificateData,
 };

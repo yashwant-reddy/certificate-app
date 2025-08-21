@@ -17,7 +17,7 @@ const {
   checkSpecialPattern,
 } = require('../utils/significanceCheck');
 
-const { writeCertificateData } = require('../utils/writeCertificateDetails');
+const { writeCertificateData, getNextRefNumber } = require('../utils/writeCertificateDetails');
 
 const removeSubframeIndexFromReport1 = require('../utils/removeSubframeIndex');
 
@@ -242,17 +242,18 @@ router.post('/', upload.array('files'), async (req, res) => {
   };
 
   let counterValue;
-  try {
-    counterValue = writeCertificateData(formData);
-    console.log('[INFO] Wrote certificate data for:', formData.acReg);
-  } catch (err) {
-    console.error('[ERROR] Writing to CSV:', err.message);
-    return res
-      .status(500)
-      .send(
-        'The certificate data could not be saved. Please ensure the CSV file is not open.'
-      );
-  }
+  counterValue = getNextRefNumber();
+  // try {
+  //   counterValue = writeCertificateData(formData);
+  //   console.log('[INFO] Wrote certificate data for:', formData.acReg);
+  // } catch (err) {
+  //   console.error('[ERROR] Writing to CSV:', err.message);
+  //   return res
+  //     .status(500)
+  //     .send(
+  //       'The certificate data could not be saved. Please ensure the CSV file is not open.'
+  //     );
+  // }
 
   const certificateRefNo = `${counterValue}/${currentYear}`;
 

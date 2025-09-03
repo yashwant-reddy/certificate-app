@@ -486,6 +486,14 @@ document
     const formData = new FormData(this);
     const button = previewButton;
 
+    // Add separate Part Number and Serial Number to formData
+    const fdrPnSn = document.getElementById('fdrPnSn').value;
+    if (fdrPnSn) {
+      const parts = fdrPnSn.split(';');
+      formData.append('partNumber', parts[0] || '');
+      formData.append('serialNumber', parts[1] || '');
+    }
+
     button.disabled = true;
     button.style.backgroundColor = '#999';
     button.textContent = 'Generating...';
@@ -500,7 +508,6 @@ document
         alert('Preview failed');
       } else {
         const htmlContent = await res.text();
-        // Open the preview in a new tab
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const previewUrl = URL.createObjectURL(blob);
         window.open(previewUrl, '_blank');

@@ -93,7 +93,7 @@ function classifyFieldTypes(data) {
 
 // Safely handle undefined or blank values
 function safeValue(val) {
-  return val === undefined || val === null ? 'Update' : val;
+  return val === undefined || val === null ? 'Enter' : val;
 }
 
 function isInteger(val) {

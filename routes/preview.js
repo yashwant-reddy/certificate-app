@@ -17,7 +17,10 @@ const {
   checkSpecialPattern,
 } = require('../utils/significanceCheck');
 
-const { writeCertificateData, getNextRefNumber } = require('../utils/writeCertificateDetails');
+const {
+  writeCertificateData,
+  getNextRefNumber,
+} = require('../utils/writeCertificateDetails');
 
 const removeSubframeIndexFromReport1 = require('../utils/removeSubframeIndex');
 
@@ -346,9 +349,8 @@ router.post('/', upload.array('files'), async (req, res) => {
   const operatorInfoPath = path.join(
     __dirname,
     '..',
-    'public',
     'data',
-    'operator info.json'
+    'Operator Info.json'
   );
   let operatorData = {};
   try {

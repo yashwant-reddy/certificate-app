@@ -11,6 +11,7 @@
  * Usage examples:
  *   node utils/convertOperatorInfo.js --in "data/Operator Info 2.xlsx" --out "\\\\10.15.8.151\\Nest Application\\certificate-app\\data\\Operator Info.json"
  *   node utils/convertOperatorInfo.js --in "data/Operator Info.xlsx" --out "data/Operator Info.json" --sheet "Sheet1"
+ *   node utils/convertOperatorInfo.js --in "data/Operator Info 2 2 2.xlsx" --out "data/"
  *
  * Requires:
  *   npm i xlsx

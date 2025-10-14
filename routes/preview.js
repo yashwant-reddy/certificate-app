@@ -477,7 +477,7 @@ router.post('/', upload.array('files'), async (req, res) => {
         return `
         <tr>
           <td>${sNumber++}</td>
-          <td contenteditable="true">${cleanedKey}</td>
+          <td contenteditable="true" style="text-align: left;">${cleanedKey}</td>
           <td contenteditable="true">${parameterType}</td>
           <td contenteditable="true">${isAllSame || usePattern ? '' : '✔'}</td>
           <td contenteditable="true">${isAllSame || usePattern ? '✔' : ''}</td>

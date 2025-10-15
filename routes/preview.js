@@ -274,12 +274,21 @@ router.post('/', upload.array('files'), async (req, res) => {
     'images',
     'achhuth-signature.png'
   );
-  const logoPath = path.join(
+  // Use this when the logo changes back to nest digital
+  // const logoPath = path.join(
+  //   __dirname,
+  //   '..',
+  //   'public',
+  //   'images',
+  //   'nestlogo.svg'
+  // );
+
+    const logoPath = path.join(
     __dirname,
     '..',
     'public',
     'images',
-    'nestlogo.svg'
+    'NestLogo.png'
   );
 
   let signature1URI = '',
@@ -300,7 +309,9 @@ router.post('/', upload.array('files'), async (req, res) => {
       console.warn('[WARN] Signature 2 image not found:', signature2Path);
     }
     if (fs.existsSync(logoPath)) {
-      logoURI = `data:image/svg+xml;base64,${fs.readFileSync(logoPath, 'base64')}`;
+      // use this for nest digital
+      // logoURI = `data:image/svg+xml;base64,${fs.readFileSync(logoPath, 'base64')}`;
+      logoURI = `data:image/png;base64,${fs.readFileSync(logoPath, 'base64')}`;
       console.log('[INFO] Loaded:', logoPath);
     } else {
       console.warn('[WARN] Logo image not found:', logoPath);

@@ -112,7 +112,7 @@
 
     .remarks-row td,
     .remarks-text td,
-    .certification-row tr td {
+    .certification-row {
       text-align: left;
     }
 
@@ -388,24 +388,46 @@
 
       <!-- Section 4: Logos and Text -->
       <div class="section-four no-break">
-        <table>
+        <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+          <!-- Row 1 -->
           <tr class="stretch-row">
-            <td class="logo-left" colspan="2">
-              <img src="{{logo}}" alt="Nest Logo" />
+            <!-- Left Logo -->
+            <td class="logo-left" colspan="2" style="text-align: center; vertical-align: middle; padding: 10px 0;">
+              <div style="display: inline-block; text-align: center;">
+                <img src="{{logo}}" alt="Nest Logo" style="
+        max-width: 20%;
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto 6px auto;
+      " />
+                <div style="font-size: 12px;">SFO Technologies Pvt Ltd</div>
+              </div>
             </td>
-            <td class="text-center" colspan="2">
-              <div>SFO Technologies Pvt Ltd</div>
-              <div>Crescent 4, Prestige Shantiniketan,</div>
-              <div>Whitefield Road, Bengaluru,</div>
-              <div>Karnataka 560048</div>
+
+
+
+
+
+            <!-- Center Address -->
+            <td colspan="2" style="text-align: center; vertical-align: middle;">
+              <div style="display: inline-block; text-align: left;">
+                <div><strong>SFO Technologies Pvt Ltd</strong></div>
+                <div>Crescent 4, Prestige Shantiniketan,</div>
+                <div>Whitefield Road, Bengaluru,</div>
+                <div>Karnataka 560048</div>
+              </div>
             </td>
-            <td class="logo-right" colspan="2" style="text-align: center">
+
+            <!-- Right Box -->
+            <td class="logo-right" colspan="2" style="text-align: center;">
               <div style="
-                display: inline-block;
-                text-align: left;
-                border: 1px solid black;
-                padding: 8px;
-              " contenteditable="true">
+            display: inline-block;
+            text-align: left;
+            border: 1px solid black;
+            padding: 8px;
+          " contenteditable="true">
                 SFO/QM/FORM NO: 004<br />
                 ISSUE NO: 2<br />
                 REVISION NO: 4<br />
@@ -413,31 +435,55 @@
               </div>
             </td>
           </tr>
-          <!-- Second row: Certificate Information -->
+
           <tr class="certificate-row">
-            <td colspan="2" rowspan="2"></td>
-            <td colspan="2" rowspan="2">Certificate of Compliance</td>
-            <td colspan="2">
-              <div class="refrence-number">
-                Certificate Ref No: SFO/
-                <span id="certificateRefNo" contenteditable="true">{{certificateRefNo}}</span>
+            <td colspan="6" style="padding: 8px 0;">
+              <div style="
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      position: relative;
+    ">
+                <!-- Centered Title -->
+                <div style="
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-weight: bold;
+        font-size: 13px;
+        text-align: center;
+        white-space: nowrap;
+      ">
+                  Certificate of Compliance
+                </div>
+
+                <!-- Right-aligned Reference -->
+                <div style="margin-left: auto; text-align: right; white-space: nowrap; padding-right: 3px;">
+                  Certificate Ref No: SFO/
+                  <span id="certificateRefNo" contenteditable="true">{{certificateRefNo}}</span>
+                </div>
               </div>
             </td>
           </tr>
-          <tr>
-            <td colspan="2"></td>
-          </tr>
-          <tr class="table-row-three">
+
+
+
+          <!-- Row 3 (Empty filler for rowspan alignment) -->
+          <tr></tr>
+
+          <!-- Row 4: Header -->
+          <tr class="table-row-three" style="font-weight: bold; text-align: center;">
             <td>Item</td>
             <td>Description</td>
             <td>Part No</td>
             <td>Qty</td>
             <td>Serial No</td>
-            <td>Status Work</td>
+            <td>Status/Work</td>
           </tr>
 
-          <!-- Row 4 -->
-          <tr class="table-row-four">
+          <!-- Row 5: Data -->
+          <tr class="table-row-four" style="text-align: center;">
             <td id="itemNo" contenteditable="true">1</td>
             <td id="itemDesc" contenteditable="true">Enter</td>
             <td id="partNumber" contenteditable="true">{{partNumber}}</td>
@@ -446,44 +492,40 @@
             <td id="statusWork" contenteditable="true">Readout Report</td>
           </tr>
 
-          <!-- 5th Row with Remarks and Comments -->
+          <!-- Row 6: Remarks -->
           <tr class="remarks-row">
-            <td colspan="6" class="remarks-text" id="remarks" contenteditable="true">
+            <td colspan="6" class="remarks-text" id="remarks" contenteditable="true" style="text-align: left;">
               <p><strong>Regulatory Compliance, if any:</strong></p>
               <p>
                 Certified that the Flight data transcription is carried out in
-                accordance with DGCA,CAR Sec 2 Series I Part V and AAC No. 3 of
-                2019.
+                accordance with DGCA, CAR Sec 2 Series I Part V and AAC No. 3 of 2019.
               </p>
               <p>
-                <strong>Attention:</strong> The operator is advised to go
-                through the readout report to determine that the SSFDR system is
-                functioning correctly.
+                <strong>Attention:</strong> The operator is advised to go through the
+                readout report to determine that the SSFDR system is functioning
+                correctly.
               </p>
-              <!-- Temporary Removal -->
-              <!-- <p>
-                <strong>Comments:</strong> This FDR readout report relates to
-                {{operator}}, {{typeOfAC}}, {{acReg}}.
-              </p> -->
             </td>
           </tr>
 
-          <!-- 6th Row with Certification Text -->
+          <!-- Row 7: Certification Text -->
           <tr class="certification-row">
-            <td colspan="6" class="remarks-text">
+            <td colspan="6" class="remarks-text" style="text-align: left;">
               <p>
-                <strong>It is certified that the whole of the supplies and/or
-                  services supplied with this certificate have been inspected or
-                  otherwise quality controlled and unless otherwise stated above
-                  are in accordance with the requirements of the work order,
-                  drawings and specifications relative thereto and conform in
-                  all respects with the conditions and requirements of the
-                  contract.</strong>
+                <strong>
+                  It is certified that the whole of the supplies and/or services
+                  supplied with this certificate have been inspected or otherwise
+                  quality controlled and unless otherwise stated above are in
+                  accordance with the requirements of the work order, drawings and
+                  specifications relative thereto and conform in all respects with the
+                  conditions and requirements of the contract.
+                </strong>
               </p>
             </td>
           </tr>
         </table>
       </div>
+
     </div>
   </div>
 

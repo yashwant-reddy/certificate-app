@@ -34,7 +34,7 @@
         <label for="typeOfAC">Type of A/C:</label>
         <input type="text" id="typeOfAC" name="typeOfAC" />
 
-        <label for="fdrPnSn">FDR P/N-S/N:</label>
+        <label id="pnSnLabel" for="fdrPnSn">FDR P/N-S/N:</label>
         <input type="text" id="fdrPnSn" name="fdrPnSn" />
 
         <label for="dataReceivedFrom">Data Received From:</label>
@@ -66,7 +66,7 @@
 
         <!-- File Upload Section (in-form, styled as before) -->
         <div class="file-container" style="margin-top: 18px">
-          <label for="files">Upload FDR Data:</label>
+          <label id="uploadLabel" for="files">Upload FDR Data:</label>
           <input type="file" id="files" name="files" accept=".csv" multiple hidden onchange="handleFilesSelected()" />
           <label for="files" class="file-upload-btn" tabindex="0" aria-label="Choose CSV Files">Choose CSV Files</label>
           <ul id="file-list"></ul>

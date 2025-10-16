@@ -378,6 +378,8 @@ router.post('/', upload.array('files'), async (req, res) => {
   }
 
   const acRecord = operatorData[formData.acReg] || {};
+  console.log('[INFO] Loaded acRecord for', formData.acReg, ':', acRecord);
+
   const partNumber = safeValue(acRecord['Part Number']);
   const serialNumber = safeValue(acRecord['Serial Number']);
   const noOfParams = safeValue(

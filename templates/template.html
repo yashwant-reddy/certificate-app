@@ -331,7 +331,7 @@
             <div class="section-value" id="operator" contenteditable="true">{{operator}}</div>
           </div>
           <div class="section">
-            <div class="section-title">FDR P/N-S/N:</div>
+            <div class="section-title" id="pnSnLabel">FDR P/N-S/N:</div>
             <div class="section-value" id="fdrPnSn" contenteditable="true">{{fdrPnSn}}</div>
           </div>
           <div class="section">
@@ -595,7 +595,7 @@
 
         <p><strong>Enclosures in Electronic format:</strong></p>
         <p contenteditable="true">1. Readout Report in PDF Format</p>
-        <p contenteditable="true">2. Readout Report in Graphical formats</p>
+        <p contenteditable="true">2. Readout Report in Graphical format</p>
         <p contenteditable="true">3. This Readout Analysis Report</p>
       </div>
       <div style="
@@ -655,6 +655,45 @@
     style.textContent = '@media print { #electron-search-bar { display: none !important; } }';
     document.head.appendChild(style);
 
+    document.addEventListener("DOMContentLoaded", function () {
+      const acRegElem = document.getElementById("acReg");
+      const pnSnLabelElem = document.getElementById("pnSnLabel");
+      const statusParagraphs = document.querySelectorAll(".signature p[contenteditable='true']");
+
+      function updateForQAR() {
+        if (acRegElem && acRegElem.textContent.toUpperCase().includes("QAR")) {
+          // Update the label
+          if (pnSnLabelElem) {
+            pnSnLabelElem.textContent = "QAR P/N-S/N:";
+          }
+
+          // Update "Status of FDR unit" to "Status of QAR unit"
+          statusParagraphs.forEach((p) => {
+            if (p.textContent.trim().startsWith("4. Status of FDR unit")) {
+              p.textContent = "4. Status of QAR unit: Serviceable";
+            }
+          });
+        } else {
+          // Reset to FDR if not QAR
+          if (pnSnLabelElem) {
+            pnSnLabelElem.textContent = "FDR P/N-S/N:";
+          }
+          statusParagraphs.forEach((p) => {
+            if (p.textContent.trim().startsWith("4. Status of QAR unit")) {
+              p.textContent = "4. Status of FDR unit: Serviceable";
+            }
+          });
+        }
+      }
+
+      // Initial check on load
+      updateForQAR();
+
+      // Live update when user edits the A/C Reg field
+      if (acRegElem) {
+        acRegElem.addEventListener("input", updateForQAR);
+      }
+    });
 
     if (window.electronAPI && window.electronAPI.onFind) {
       window.electronAPI.onFind(() => {
@@ -828,8 +867,6 @@
       });
     }
   </script>
-
-</body>
 
 </body>
 

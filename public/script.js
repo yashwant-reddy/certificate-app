@@ -21,6 +21,11 @@ let operatorDropdownIndex = -1;
 let acRegDropdownItems = [];
 let acRegDropdownIndex = -1;
 
+acRegInput.addEventListener('input', function () {
+  updateQarFdrLabels(); // Always update label immediately
+});
+
+
 // Prevent form submission when pressing Enter in any input
 document.getElementById('htmlForm').addEventListener('keydown', function (e) {
   // Only block if Enter is pressed and the target is not a button or textarea
@@ -268,6 +273,10 @@ function filterAcRegDropdown() {
       acRegDropdownItems.push(div);
     });
   }
+
+  // ✅ --- QAR/FDR Label Update (safe placement) ---
+  // ✅ Ensure labels always sync on input change
+  updateQarFdrLabels();
 }
 
 function createDropdownItem(reg, idx) {
@@ -323,9 +332,28 @@ function selectAcReg(reg) {
   handleAcRegChange();
 }
 
+function updateQarFdrLabels() {
+  const acRegValue = (acRegInput.value || '').toUpperCase();
+  const uploadLabel = document.getElementById('uploadLabel');
+  const pnSnLabel = document.getElementById('pnSnLabel');
+
+  if (!uploadLabel || !pnSnLabel) return;
+
+  if (acRegValue.includes('QAR')) {
+    uploadLabel.textContent = 'Upload QAR Data:';
+    pnSnLabel.textContent = 'QAR P/N-S/N:';
+  } else {
+    uploadLabel.textContent = 'Upload FDR Data:';
+    pnSnLabel.textContent = 'FDR P/N-S/N:';
+  }
+}
+
+
 acRegInput.addEventListener('input', filterAcRegDropdown);
 acRegInput.addEventListener('focus', showAcRegDropdown);
 acRegInput.addEventListener('blur', hideAcRegDropdown);
+acRegInput.addEventListener('input', handleAcRegChange);
+
 
 acRegInput.addEventListener('keydown', function (e) {
   if (
@@ -389,6 +417,10 @@ function hideSecondFormIfAllBlank() {
 // --- Update visibility based on A/C Reg input ---
 function handleAcRegChange() {
   const acRegValue = acRegInput.value.trim();
+
+  // ✅ Ensure labels always sync on input change
+  updateQarFdrLabels();
+
   if (acRegValue && aircraftData[acRegValue]) {
     // Valid A/C Reg and validate nature of readout and data received from
     document.getElementById('natureOfReadout').value = 'Periodical';
@@ -406,7 +438,6 @@ function handleAcRegChange() {
     hideSecondFormIfAllBlank();
   }
 }
-acRegInput.addEventListener('input', handleAcRegChange);
 
 // --- Upload and Preview Logic (Unchanged) ---
 fileInput.addEventListener('change', () => {
@@ -461,30 +492,24 @@ function clearUploads() {
   }
 }
 
-// document
-//   .getElementById('uploadForm')
-//   .addEventListener('submit', async function (e) {
-//     e.preventDefault();
-//     const formData = new FormData(this);
-//     try {
-//       const res = await fetch('/upload', {
-//         method: 'POST',
-//         body: formData,
-//       });
-//       if (!res.ok) throw new Error('Upload failed');
-//       alert('CSV files uploaded successfully.');
-//     } catch (err) {
-//       alert('Upload error.');
-//     }
-//   });
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('htmlForm');
+  if (!form) {
+    console.error('[ERROR] Form element with id="htmlForm" not found!');
+    return;
+  }
 
-document
-  .getElementById('htmlForm')
-  .addEventListener('submit', async function (e) {
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
+    console.log('[INFO] Form submit triggered ✅');
 
     const formData = new FormData(this);
     const button = previewButton;
+
+    // 🟦 Add QAR/FDR recorder info
+    const acRegValue = (document.getElementById('acReg').value || '').toUpperCase();
+    const recorder = acRegValue.includes('QAR') ? 'QAR' : 'FDR';
+    formData.append('recorder', recorder);
 
     // Add separate Part Number and Serial Number to formData
     const fdrPnSn = document.getElementById('fdrPnSn').value;
@@ -494,6 +519,14 @@ document
       formData.append('serialNumber', parts[1] || '');
     }
 
+    // 🟨 Always log FormData contents
+    console.group('[INFO] Loaded operator info data');
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+    console.groupEnd();
+
+    // 🟩 Button feedback
     button.disabled = true;
     button.style.backgroundColor = '#999';
     button.textContent = 'Generating...';
@@ -514,6 +547,7 @@ document
         button.textContent = 'Generated ✔️';
       }
     } catch (err) {
+      console.error('[ERROR] Network issue:', err);
       alert('Network error');
     } finally {
       button.disabled = false;
@@ -521,3 +555,5 @@ document
       button.textContent = 'Generate HTML Preview';
     }
   });
+});
+

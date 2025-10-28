@@ -188,11 +188,12 @@ router.post('/', upload.array('files'), async (req, res) => {
       }
     }
 
-    // Step 7: Save manifest with base file names (no extension) sorted logically
+    // Step 7: Save manifest with base file names (no extension) sorted intelligently
     const uploadedBaseNames = Object.keys(filteredResults).map(
       (name) => path.parse(name).name
     );
 
+    // --- Logical numeric sort (for purely numbered filenames like 001A, 002, etc.) ---
     function logicalSort(a, b) {
       const extractParts = (filename) => {
         const match = filename.match(/(\d+)([a-zA-Z]*)/);
@@ -206,8 +207,40 @@ router.post('/', upload.array('files'), async (req, res) => {
       return suffixA.localeCompare(suffixB);
     }
 
-    const sortedBaseNames = uploadedBaseNames.sort(logicalSort);
+    // --- Alphabetical + numeric suffix sort (e.g. ENGINE PARAMETERS 1, ENGINE PARAMETERS 2) ---
+    function alphaNumericSort(a, b) {
+      const extractAlphaNum = (str) => {
+        const match = str.match(/^(.*?)(\d+)?$/); // Split into prefix and optional trailing number
+        return {
+          prefix: match ? match[1].trim().toUpperCase() : str.toUpperCase(),
+          number: match && match[2] ? parseInt(match[2]) : null,
+        };
+      };
 
+      const A = extractAlphaNum(a);
+      const B = extractAlphaNum(b);
+
+      // Compare alphabetically first
+      const prefixCompare = A.prefix.localeCompare(B.prefix);
+      if (prefixCompare !== 0) return prefixCompare;
+
+      // Then numerically if both have trailing numbers
+      if (A.number !== null && B.number !== null) return A.number - B.number;
+      if (A.number !== null) return 1; // Put numbered items after plain ones
+      if (B.number !== null) return -1;
+      return 0;
+    }
+
+    // --- Decide which method to use ---
+    const allStartWithLetter = uploadedBaseNames.every((name) =>
+      /^[A-Za-z]/.test(name)
+    );
+
+    const sortedBaseNames = allStartWithLetter
+      ? uploadedBaseNames.sort(alphaNumericSort)
+      : uploadedBaseNames.sort(logicalSort);
+
+    // --- Write manifest ---
     const manifestPath = path.join(uploadsDir, 'manifest.json');
     try {
       fs.writeFileSync(manifestPath, JSON.stringify(sortedBaseNames, null, 2));
@@ -283,7 +316,7 @@ router.post('/', upload.array('files'), async (req, res) => {
   //   'nestlogo.svg'
   // );
 
-    const logoPath = path.join(
+  const logoPath = path.join(
     __dirname,
     '..',
     'public',

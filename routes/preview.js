@@ -521,15 +521,15 @@ router.post('/', upload.array('files'), async (req, res) => {
             : '';
 
         return `
-        <tr>
-          <td>${sNumber++}</td>
-          <td contenteditable="true" style="text-align: left;">${cleanedKey}</td>
-          <td contenteditable="true">${parameterType}</td>
-          <td contenteditable="true">${isAllSame || usePattern ? '' : '✔'}</td>
-          <td contenteditable="true">${isAllSame || usePattern ? '✔' : ''}</td>
-          <td contenteditable="true"></td>
-          <td contenteditable="true"></td>
-          <td contenteditable="true">${remark}</td>
+        <tr class="readout-row">
+          <td class="col-slno">${sNumber++}</td>
+          <td class="col-paramName" contenteditable="true" style="text-align: left;">${cleanedKey}</td>
+          <td class="col-paramType" contenteditable="true">${parameterType}</td>
+          <td class="col-s" contenteditable="true">${isAllSame || usePattern ? '' : '✔'}</td>
+          <td class="col-ns" contenteditable="true">${isAllSame || usePattern ? '✔' : ''}</td>
+          <td class="col-nr" contenteditable="true"></td>
+          <td class="col-us" contenteditable="true"></td>
+          <td class="col-comments" contenteditable="true">${remark}</td>
         </tr>
       `;
       })

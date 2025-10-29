@@ -21,6 +21,7 @@
       margin-bottom: 10px;
     }
 
+    /* Page 1 Start */
     .report-container {
       display: flex;
       flex-direction: column;
@@ -122,7 +123,7 @@
 
     .page-two-box {
       padding: 15px;
-      margin-top: 20px;
+      margin: 0 100px 0 100px;
     }
 
     .heading-box {
@@ -163,7 +164,7 @@
       border: 2px solid #222;
       border-radius: 5px;
       padding: 20px;
-      /* margin: 24px auto; */
+      margin: 0px 100px 0 100px;
       max-width: 100%;
       background: #fff;
       box-shadow: 0 2px 8px #0002;
@@ -225,7 +226,7 @@
 
       .page-two-box {
         padding: 10px 10px;
-        margin: 10px 0 0 0;
+        margin: 0 100px 0 100px;
       }
 
       .no-print {
@@ -437,96 +438,85 @@
           </tr>
 
           <tr class="certificate-row">
-            <td colspan="6" style="padding: 8px 0;">
-              <div style="
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      position: relative;
-    ">
+            <td colspan="4" style="padding: 8px 0;">
+              <div
+                style="display: flex;align-items: center;justify-content: space-between;width: 100%;position: relative;">
                 <!-- Centered Title -->
-                <div style="
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        font-weight: bold;
-        font-size: 13px;
-        text-align: center;
-        white-space: nowrap;
-      ">
+                <div
+                  style="position: absolute;left: 50%;transform: translateX(-50%);font-weight: bold;font-size: 13px;text-align: center;white-space: nowrap;">
                   Certificate of Compliance
                 </div>
-
-                <!-- Right-aligned Reference -->
-                <div style="margin-left: auto; text-align: right; white-space: nowrap; padding-right: 3px;">
-                  Certificate Ref No: SFO/
-                  <span id="certificateRefNo" contenteditable="true">{{certificateRefNo}}</span>
-                </div>
+            </td>
+            <td colspan="2">
+              <!-- Right-aligned Reference -->
+              <div style="margin-left: auto; text-align: center; white-space: nowrap; padding-right: 3px;">
+                Certificate Ref No: SFO/
+                <span id="certificateRefNo" contenteditable="true">{{certificateRefNo}}</span>
               </div>
-            </td>
-          </tr>
-
-
-
-          <!-- Row 3 (Empty filler for rowspan alignment) -->
-          <tr></tr>
-
-          <!-- Row 4: Header -->
-          <tr class="table-row-three" style="font-weight: bold; text-align: center;">
-            <td>Item</td>
-            <td>Description</td>
-            <td>Part No</td>
-            <td>Qty</td>
-            <td>Serial No</td>
-            <td>Status/Work</td>
-          </tr>
-
-          <!-- Row 5: Data -->
-          <tr class="table-row-four" style="text-align: center;">
-            <td id="itemNo" contenteditable="true">1</td>
-            <td id="itemDesc" contenteditable="true">Enter</td>
-            <td id="partNumber" contenteditable="true">{{partNumber}}</td>
-            <td id="qty" contenteditable="true">1</td>
-            <td id="serialNumber" contenteditable="true">{{serialNumber}}</td>
-            <td id="statusWork" contenteditable="true">Readout Report</td>
-          </tr>
-
-          <!-- Row 6: Remarks -->
-          <tr class="remarks-row">
-            <td colspan="6" class="remarks-text" id="remarks" contenteditable="true" style="text-align: left;">
-              <p><strong>Regulatory Compliance, if any:</strong></p>
-              <p>
-                Certified that the Flight data transcription is carried out in
-                accordance with DGCA, CAR Sec 2 Series I Part V and AAC No. 3 of 2019.
-              </p>
-              <p>
-                <strong>Attention:</strong> The operator is advised to go through the
-                readout report to determine that the SSFDR system is functioning
-                correctly.
-              </p>
-            </td>
-          </tr>
-
-          <!-- Row 7: Certification Text -->
-          <tr class="certification-row">
-            <td colspan="6" class="remarks-text" style="text-align: left;">
-              <p>
-                <strong>
-                  It is certified that the whole of the supplies and/or services
-                  supplied with this certificate have been inspected or otherwise
-                  quality controlled and unless otherwise stated above are in
-                  accordance with the requirements of the work order, drawings and
-                  specifications relative thereto and conform in all respects with the
-                  conditions and requirements of the contract.
-                </strong>
-              </p>
-            </td>
-          </tr>
-        </table>
       </div>
+      </td>
+      </tr>
 
+
+
+      <!-- Row 3 (Empty filler for rowspan alignment) -->
+      <tr></tr>
+
+      <!-- Row 4: Header -->
+      <tr class="table-row-three" style="font-weight: bold; text-align: center;">
+        <td>Item</td>
+        <td>Description</td>
+        <td>Part No</td>
+        <td>Qty</td>
+        <td>Serial No</td>
+        <td>Status/Work</td>
+      </tr>
+
+      <!-- Row 5: Data -->
+      <tr class="table-row-four" style="text-align: center;">
+        <td id="itemNo" contenteditable="true">1</td>
+        <td id="itemDesc" contenteditable="true">Enter</td>
+        <td id="partNumber" contenteditable="true">{{partNumber}}</td>
+        <td id="qty" contenteditable="true">1</td>
+        <td id="serialNumber" contenteditable="true">{{serialNumber}}</td>
+        <td id="statusWork" contenteditable="true">Readout Report</td>
+      </tr>
+
+      <!-- Row 6: Remarks -->
+      <tr class="remarks-row">
+        <td colspan="6" class="remarks-text" id="remarks" contenteditable="true" style="text-align: left;">
+          <p><strong>Regulatory Compliance, if any:</strong></p>
+          <p>
+            Certified that the Flight data transcription is carried out in
+            accordance with DGCA, CAR Sec 2 Series I Part V and AAC No. 3 of 2019.
+          </p>
+          <p>
+            <strong>Attention:</strong> The operator is advised to go through the
+            readout report to determine that the SSFDR system is functioning
+            correctly.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Row 7: Certification Text -->
+      <tr class="certification-row">
+        <td colspan="6" class="remarks-text" style="text-align: left;">
+          <p>
+            <strong>
+              It is certified that the whole of the supplies and/or services
+              supplied with this certificate have been inspected or otherwise
+              quality controlled and unless otherwise stated above are in
+              accordance with the requirements of the work order, drawings and
+              specifications relative thereto and conform in all respects with the
+              conditions and requirements of the contract.
+            </strong>
+          </p>
+        </td>
+      </tr>
+      </table>
     </div>
+
+  </div>
   </div>
 
   <!-- Footer Section that should appear on Page 2 -->
@@ -558,17 +548,17 @@
     </div>
 
     <!-- Table -->
-    <table>
+    <table class="readout-table">
       <thead>
         <tr>
-          <th>SL NO</th>
-          <th>PARAMETER NAME</th>
-          <th>PARAMETER TYPE</th>
-          <th>S</th>
-          <th>N/S</th>
-          <th>N/R</th>
-          <th>U/S</th>
-          <th>COMMENTS</th>
+          <th class="col-slno">SL NO</th>
+          <th class="col-paramName">PARAMETER NAME</th>
+          <th class="col-paramType">PARAMETER TYPE</th>
+          <th class="col-s">S</th>
+          <th class="col-ns">N/S</th>
+          <th class="col-nr">N/R</th>
+          <th class="col-us">U/S</th>
+          <th class="col-comments">COMMENTS</th>
         </tr>
       </thead>
 

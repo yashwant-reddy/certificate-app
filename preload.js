@@ -111,15 +111,4 @@ window.addEventListener(
   true // capture to log even if the app stops propagation
 );
 
-// Optionally auto-run the flow when print button is clicked (uncomment if desired):
-// window.addEventListener('click', (e) => {
-//   const t = e.target;
-//   const isPrintById = t && (t.id === 'printButton' || t.closest?.('#printButton'));
-//   const isPrintByData = t && (t.dataset?.action === 'print' || t.closest?.('[data-action="print"]'));
-//   if (isPrintById || isPrintByData) {
-//     const data = collectFormDataFromDOM();
-//     window.printAPI.printAndCommit(data).catch((err) => console.error('[PRELOAD] auto print ERROR:', err));
-//   }
-// }, true);
-
 console.log('[PRELOAD] preload loaded & ready');

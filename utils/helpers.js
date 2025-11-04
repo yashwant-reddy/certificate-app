@@ -122,6 +122,16 @@ function isString(val) {
   return !isInteger(s) && !isFloat(s);
 }
 
+function cleanAcReg(acReg) {
+  if (!acReg) return 'Enter';
+
+  // Remove "QAR" and any hyphens/spaces that follow
+  const cleaned = acReg.replace(/\bQAR[-\s]*\b/gi, '').trim();
+
+  // Return the cleaned value or fallback
+  return cleaned || 'Enter';
+}
+
 module.exports = {
   cleanAndFilterAndFormatKeys,
   classifyFieldTypes,
@@ -129,4 +139,5 @@ module.exports = {
   isInteger,
   isFloat,
   isString,
+  cleanAcReg,
 };

@@ -10,6 +10,7 @@ const {
   cleanAndFilterAndFormatKeys,
   classifyFieldTypes,
   safeValue,
+  cleanAcReg,
 } = require('../utils/helpers');
 
 const {
@@ -367,7 +368,7 @@ router.post('/', upload.array('files'), async (req, res) => {
   html = html
     .replace('{{workOrderNo}}', formData.workOrderNo || 'Enter')
     .replace(/{{operator}}/g, formData.operator || 'Enter')
-    .replace(/{{acReg}}/g, formData.acReg || 'Enter')
+    .replace(/{{acReg}}/g, cleanAcReg(formData.acReg) || 'Enter')
     .replace(/{{typeOfAC}}/g, formData.typeOfAC || 'Enter')
     .replace('{{dateOfDumping}}', formData.dateOfDumping || 'Enter')
     .replace('{{dataReceivedFrom}}', formData.dataReceivedFrom || 'Enter')

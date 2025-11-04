@@ -332,7 +332,7 @@
             <div class="section-value" id="operator" contenteditable="true">{{operator}}</div>
           </div>
           <div class="section">
-            <div class="section-title" id="pnSnLabel">FDR P/N-S/N:</div>
+            <div class="section-title" id="pnSnLabel" contenteditable="true">FDR P/N-S/N:</div>
             <div class="section-value" id="fdrPnSn" contenteditable="true">{{fdrPnSn}}</div>
           </div>
           <div class="section">
@@ -645,6 +645,7 @@
     style.textContent = '@media print { #electron-search-bar { display: none !important; } }';
     document.head.appendChild(style);
 
+    //WIP:add sroce option and based on that this should trigger 
     document.addEventListener("DOMContentLoaded", function () {
       const acRegElem = document.getElementById("acReg");
       const pnSnLabelElem = document.getElementById("pnSnLabel");

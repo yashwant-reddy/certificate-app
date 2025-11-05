@@ -21,13 +21,22 @@
             onblur="hideOperatorDropdown()" autocomplete="off" placeholder="Enter Operator" />
           <div id="operatorDropdown" class="dropdown-list" style="display: none"></div>
         </div>
-        <!-- A/C Reg input and dropdown container -->
-        <div id="acRegContainer" style="position: relative">
-          <label for="acReg">A/C Reg:</label>
-          <input type="text" id="acReg" name="acReg" required onfocus="showAcRegDropdown()" onblur="hideAcRegDropdown()"
-            autocomplete="off" placeholder="Enter A/C Reg" />
 
-          <div id="acRegDropdown" class="dropdown-list" style="display: none"></div>
+        <div class="form-row">
+          <!-- A/C Reg input and dropdown container -->
+          <div id="acRegContainer" style="position: relative; width: 60%;">
+            <label for="acReg">A/C Reg:</label>
+            <input type="text" id="acReg" name="acReg" required onfocus="showAcRegDropdown()"
+              onblur="hideAcRegDropdown()" autocomplete="off" placeholder="Enter A/C Reg" />
+
+            <div id="acRegDropdown" class="dropdown-list" style="display: none"></div>
+          </div>
+          <div id="sourceTypeContainer" style="position: relative;">
+            <label for="sourceType">Source Type:</label>
+            <input type="text" id="sourceTypeInput" name="sourceType" placeholder="Enter Source Type" required
+              onfocus="showSourceTypeDropdown()" onblur="hideSourceTypeDropdown()" autocomplete="off" />
+            <div id="sourceTypeDropdown" class="dropdown-list" style="display: none"></div>
+          </div>
         </div>
 
         <!-- Auto-filled but editable fields -->

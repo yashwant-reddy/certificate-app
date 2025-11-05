@@ -107,6 +107,13 @@ select {
   color: white;
 }
 
+.form-row {
+  display: flex;
+  /* space between the two fields */
+  place-content: space-between;
+  width: 100%;
+}
+
 button {
   display: block;
   width: 100%;
@@ -123,6 +130,7 @@ button {
 button:hover {
   background-color: #005bb5;
 }
+
 button:disabled {
   cursor: not-allowed;
 }

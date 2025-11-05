@@ -2,24 +2,26 @@
 /**
  * convertOperatorInfo.js
  *
- * Reads an Excel file (Operator Info.xlsx) and writes a JSON file keyed by "Aircraft Region".
+ * Reads an Excel file (Operator Info.xlsx) and writes a JSON file keyed by "Aircraft Region",
+ * with nested FDR/QAR structures inside each region.
+ *
  * - Blank cells => null
  * - Preserves leading zeros when Excel cell is text or formatted (raw:false)
  * - Attempts to write to the provided --out path first.
- *   If that write fails (permissions / path), falls back to <projectRoot>/data/Operator Info.json
+ *   If that write fails, falls back to <projectRoot>/data/Operator Info.json
  *
  * Usage examples:
- *   node utils/convertOperatorInfo.js --in "data/Operator Info 2.xlsx" --out "\\\\10.15.8.151\\Nest Application\\certificate-app\\data\\Operator Info.json"
- *   node utils/convertOperatorInfo.js --in "data/Operator Info.xlsx" --out "data/Operator Info.json" --sheet "Sheet1"
- *   node utils/convertOperatorInfo.js --in "data/Operator Info.xlsx" --out "data/"
+ *   node utils/convertOperatorInfo.js --in "data/Operator Info.xlsx" --out "data/Operator Info.json"
+ *   node utils/convertOperatorInfo.js --in "data/Operator Info.xlsx" --out "\\\\10.15.8.151\\Nest Application\\certificate-app\\data\\Operator Info.json"
+ *   node utils/convertOperatorInfo.js --in "data/Operator Info.xlsx" --out "data/" --sheet "Sheet1"
  *
  * Requires:
  *   npm i xlsx
  */
 
-const fs = require('fs');
-const path = require('path');
-const XLSX = require('xlsx');
+const fs = require("fs");
+const path = require("path");
+const XLSX = require("xlsx");
 
 // ------------------------------
 // CLI ARGS
@@ -30,9 +32,9 @@ function getArg(flag, def = undefined) {
   return def;
 }
 
-const inPath = getArg('--in');
-const outPath = getArg('--out');
-const sheetNameArg = getArg('--sheet', null);
+const inPath = getArg("--in");
+const outPath = getArg("--out");
+const sheetNameArg = getArg("--sheet", null);
 
 if (!inPath) {
   console.error('ERROR: Please provide --in "<excel path>".');
@@ -47,59 +49,87 @@ if (!outPath) {
 // HEADER NORMALIZATION
 // ------------------------------
 const canonicalHeaders = [
-  'SL No',
-  'Aircraft Region',
-  'Aircraft type',
-  'Operator',
-  'Part Number',
-  'Serial Number',
-  'LFL Refrence NO',
-  'Software Type',
-  'No of Parameter recorded',
-  'No of Parameter submitted for Evaluation',
+  "SL No",
+  "Aircraft Region",
+  "Aircraft type",
+  "Operator",
+  "Source Type", // ✅ Added new column
+  "Part Number",
+  "Serial Number",
+  "LFL Reference No",
+  "Software Type",
+  "No of Parameter recorded",
+  "No of Parameter submitted for Evaluation",
 ];
 
 const headerAliases = {
-  'sl no': 'SL No',
-  'slno': 'SL No',
-  's.no': 'SL No',
-  'aircraft region': 'Aircraft Region',
-  'ac reg': 'Aircraft Region',
-  'a/c reg': 'Aircraft Region',
-  'aircraft type': 'Aircraft type',
-  'operator': 'Operator',
-  'part number': 'Part Number',
-  'serial number': 'Serial Number',
-  'lfl refrence no': 'LFL Refrence NO',
-  'lfl reference no': 'LFL Refrence NO',
-  'software type': 'Software Type',
-  'no of parameter recorded': 'No of Parameter recorded',
-  'no of parameters recorded': 'No of Parameter recorded',
-  'no of parameter submitted for evaluation': 'No of Parameter submitted for Evaluation',
-  'no of parameters submitted for evaluation': 'No of Parameter submitted for Evaluation',
+  "sl no": "SL No",
+  "slno": "SL No",
+  "s.no": "SL No",
+
+  "aircraft region": "Aircraft Region",
+  "ac reg": "Aircraft Region",
+  "a/c reg": "Aircraft Region",
+  "acregion": "Aircraft Region",
+
+  "aircraft type": "Aircraft type",
+  "a/c type": "Aircraft type",
+  "aircrafttype": "Aircraft type",
+
+  "operator": "Operator",
+
+  // ✅ New: Source Type mapping
+  "source type": "Source Type",
+  "sourcetype": "Source Type",
+  "source": "Source Type",
+  "data source": "Source Type",
+
+  "part number": "Part Number",
+  "p/n": "Part Number",
+
+  "serial number": "Serial Number",
+  "s/n": "Serial Number",
+
+  // ✅ Unified to correct spelling
+  "lfl refrence no": "LFL Reference No",
+  "lfl reference no": "LFL Reference No",
+  "lfl ref no": "LFL Reference No",
+  "lfl reference number": "LFL Reference No",
+
+  "software type": "Software Type",
+  "softwaretype": "Software Type",
+
+  "no of parameter recorded": "No of Parameter recorded",
+  "no of parameters recorded": "No of Parameter recorded",
+
+  "no of parameter submitted for evaluation": "No of Parameter submitted for Evaluation",
+  "no of parameters submitted for evaluation": "No of Parameter submitted for Evaluation",
 };
 
 function toCanonicalHeader(h) {
   if (!h && h !== 0) return null;
-  const cleaned = String(h).trim().replace(/\s+/g, ' ').toLowerCase();
-  return headerAliases[cleaned] || canonicalHeaders.find(ch => ch.toLowerCase() === cleaned) || null;
+  const cleaned = String(h).trim().replace(/\s+/g, " ").toLowerCase();
+  return (
+    headerAliases[cleaned] ||
+    canonicalHeaders.find((ch) => ch.toLowerCase() === cleaned) ||
+    null
+  );
 }
 
 // ------------------------------
-// VALUE NORMALIZATION + TRIM
+// VALUE NORMALIZATION
 // ------------------------------
 function trimValue(v) {
-  if (typeof v === 'string') {
+  if (typeof v === "string") {
     const trimmed = v.trim();
-    return trimmed === '' ? null : trimmed;
+    return trimmed === "" ? null : trimmed;
   }
   return v;
 }
 
 function normalizeValue(v) {
-  // undefined or empty string => null; numeric NaN => null
-  if (v === undefined || v === '') return null;
-  if (typeof v === 'number' && Number.isNaN(v)) return null;
+  if (v === undefined || v === "") return null;
+  if (typeof v === "number" && Number.isNaN(v)) return null;
   return trimValue(v);
 }
 
@@ -128,7 +158,7 @@ function ensureDirForFile(filePath) {
 function writeAtomic(filePath, dataStr) {
   const dir = path.dirname(filePath);
   const tmp = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`);
-  fs.writeFileSync(tmp, dataStr, 'utf8');
+  fs.writeFileSync(tmp, dataStr, "utf8");
   fs.renameSync(tmp, filePath);
 }
 
@@ -147,7 +177,7 @@ function safeWriteJSON(primaryPath, fallbackDir, jsonData) {
 
   try {
     if (!fs.existsSync(fallbackDir)) fs.mkdirSync(fallbackDir, { recursive: true });
-    const fallbackPath = path.join(fallbackDir, 'Operator Info.json');
+    const fallbackPath = path.join(fallbackDir, "Operator Info.json");
     writeAtomic(fallbackPath, jsonStr);
     const stat = fs.statSync(fallbackPath);
     console.log(`[OK] Wrote JSON (${stat.size} bytes) to fallback: ${fallbackPath}`);
@@ -172,7 +202,7 @@ try {
   const rowsRaw = readSheetToJson(wb, sheetName);
 
   if (!rowsRaw || rowsRaw.length === 0) {
-    console.error('ERROR: No data rows found in the sheet.');
+    console.error("ERROR: No data rows found in the sheet.");
     process.exit(1);
   }
 
@@ -191,45 +221,53 @@ try {
       if (!(h in normalized)) normalized[h] = null;
     }
 
-    // Key must be Aircraft Region (trimmed)
-    let acReg = normalized['Aircraft Region'];
+    // Key by Aircraft Region
+    let acReg = normalized["Aircraft Region"];
     if (!acReg) continue;
-    acReg = String(acReg).trim(); // ✅ Ensure no leading/trailing space in key
+    acReg = String(acReg).trim();
 
-    // Convert numeric-like fields to numbers
+    // Source Type
+    const sourceType = (normalized["Source Type"] || "").trim().toUpperCase();
+    if (!sourceType) continue;
+
+    // Convert numeric-like fields
     const numericFields = new Set([
-      'SL No',
-      'No of Parameter recorded',
-      'No of Parameter submitted for Evaluation',
+      "SL No",
+      "No of Parameter recorded",
+      "No of Parameter submitted for Evaluation",
     ]);
     for (const field of numericFields) {
       const v = normalized[field];
       if (v === null) continue;
-      if (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v))) {
+      if (typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v))) {
         normalized[field] = Number(v);
       }
     }
 
-    output[acReg] = {
-      'SL No': normalized['SL No'],
-      'Aircraft Region': acReg,
-      'Aircraft type': normalized['Aircraft type'],
-      'Operator': normalized['Operator'],
-      'Part Number': normalized['Part Number'],
-      'Serial Number': normalized['Serial Number'],
-      'LFL Refrence NO': normalized['LFL Refrence NO'],
-      'Software Type': normalized['Software Type'],
-      'No of Parameter recorded': normalized['No of Parameter recorded'],
-      'No of Parameter submitted for Evaluation': normalized['No of Parameter submitted for Evaluation'],
+    // Ensure main key exists
+    if (!output[acReg]) output[acReg] = {};
+
+    // Build nested structure per Source Type (FDR / QAR)
+    output[acReg][sourceType] = {
+      "Aircraft Type": acReg,
+      "Source Type": sourceType,
+      "Aircraft type": normalized["Aircraft type"],
+      "Operator": normalized["Operator"],
+      "Part Number": normalized["Part Number"],
+      "Serial Number": normalized["Serial Number"],
+      "LFL Reference No": normalized["LFL Reference No"],
+      "Software Type": normalized["Software Type"],
+      "No of Parameter recorded": normalized["No of Parameter recorded"],
+      "No of Parameter submitted for Evaluation": normalized["No of Parameter submitted for Evaluation"],
     };
   }
 
-  const projectRoot = path.join(__dirname, '..');
-  const fallbackDataDir = path.join(projectRoot, 'data');
+  const projectRoot = path.join(__dirname, "..");
+  const fallbackDataDir = path.join(projectRoot, "data");
   const finalPath = safeWriteJSON(outPath, fallbackDataDir, output);
 
-  console.log('[DONE] Output JSON path:', finalPath);
+  console.log("[DONE] Output JSON path:", finalPath);
 } catch (err) {
-  console.error('ERROR:', err.message || err);
+  console.error("ERROR:", err.message || err);
   process.exit(1);
 }

@@ -276,6 +276,9 @@ router.post('/', upload.array('files'), async (req, res) => {
     lflRefNo: req.body.lflRefNo,
     noOfParametersRecorded: req.body.noOfParametersRecorded,
     noOfParametersSubmitted: req.body.noOfParametersSubmitted,
+    partNumber: req.body.partNumber,
+    serialNumber: req.body.serialNumber,
+    sourceType: req.body.sourceType,
   };
 
   let counterValue;
@@ -413,6 +416,7 @@ router.post('/', upload.array('files'), async (req, res) => {
 
   const acRecord = operatorData[formData.acReg] || {};
   console.log('[INFO] Loaded acRecord for', formData.acReg, ':', acRecord);
+  console.log('[INFO] Loaded form data:', formData);
 
   const partNumber = safeValue(acRecord['Part Number']);
   const serialNumber = safeValue(acRecord['Serial Number']);

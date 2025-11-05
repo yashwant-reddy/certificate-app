@@ -210,6 +210,104 @@ function createWindow() {
 
   // Handle all new window requests so that every popup is maximized/resizable
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // 🧠 Restrict to one child window at a time
+    const existingChild = childWindows.find((win) => !win.isDestroyed());
+
+    if (existingChild) {
+      const choice = dialog.showMessageBoxSync(mainWindow, {
+        type: 'warning',
+        buttons: ['Close Existing', 'Cancel'],
+        defaultId: 1,
+        title: 'Certificate Preview Already Open',
+        message: 'A certificate preview window is already open.',
+        detail: 'Do you want to close the current Certificate Preview?',
+        normalizeAccessKeys: true,
+      });
+
+      if (choice === 0) {
+        // ✅ User chose "Close Existing"
+        existingChild.close();
+        childWindows = childWindows.filter((w) => w !== existingChild);
+      } else {
+        // 🚫 Cancel new window
+        return { action: 'deny' };
+      }
+
+      return { action: 'deny' };
+    }
+
+    // Listen for new-window requests manually (via 'new-window' event)
+    mainWindow.webContents.on('new-window', async (event, url) => {
+      event.preventDefault(); // stop Electron from opening automatically
+
+      const existingChild = childWindows.find((win) => !win.isDestroyed());
+
+      if (existingChild) {
+        const { response } = await dialog.showMessageBox(mainWindow, {
+          type: 'warning',
+          buttons: ['Close Existing', 'Cancel'],
+          defaultId: 1,
+          title: 'Certificate Preview Already Open',
+          message: 'A certificate preview window is already open.',
+          detail: 'Do you want to close the current Certificate Preview?',
+        });
+
+        if (response === 0) {
+          // User chose "Close Existing"
+          existingChild.close();
+
+          // Wait briefly for it to close before continuing
+          existingChild.once('closed', () => {
+            openChildWindow(url);
+          });
+          return;
+        } else {
+          // Cancel operation
+          return;
+        }
+      }
+
+      // No child window open → open new one
+      openChildWindow(url);
+    });
+
+    // Helper to create child window
+    function openChildWindow(url) {
+      const child = new BrowserWindow({
+        width: 1200,
+        height: 900,
+        maximizable: true,
+        resizable: true,
+        webPreferences: {
+          preload: path.join(__dirname, 'preload.js'),
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+
+      child.maximize();
+      child.loadURL(url);
+      setAppMenu(child);
+      enableFindShortcut(child);
+
+      childWindows.push(child);
+
+      child.on('closed', () => {
+        childWindows = childWindows.filter((win) => win !== child);
+        try {
+          const deleted = clearUploads();
+          console.log(
+            '[INFO] Cleared uploads after child window closed:',
+            deleted.length,
+            'files.'
+          );
+        } catch (err) {
+          console.error('[ERROR] Failed to clear uploads after child window closed:', err);
+        }
+      });
+    }
+
+    // ✅ Safe to open a new child window
     const child = new BrowserWindow({
       width: 1200,
       height: 900,
@@ -221,12 +319,12 @@ function createWindow() {
         contextIsolation: true,
       },
     });
+
     child.maximize();
     child.loadURL(url);
     setAppMenu(child);
-
-    // NOTE: Removed enablePrintShortcut(child) to avoid double triggers
     enableFindShortcut(child);
+
     childWindows.push(child);
 
     child.on('closed', () => {
@@ -243,6 +341,7 @@ function createWindow() {
       }
     });
 
+    // Prevent Electron from auto-opening (we manage it manually)
     return { action: 'deny' };
   });
 }

@@ -12,6 +12,10 @@ const fileContainer = document.querySelector('.file-container');
 const previewButton = document.querySelector('#htmlForm button[type="submit"]');
 const fileInput = document.getElementById('files');
 const fileList = document.getElementById('file-list');
+const sourceTypeInput = document.getElementById('sourceTypeInput');
+const sourceTypeDropdown = document.getElementById('sourceTypeDropdown');
+const uploadLabel = document.getElementById('uploadLabel');
+
 
 fileContainer.style.display = 'none';
 previewButton.style.display = 'none';
@@ -20,6 +24,8 @@ let operatorDropdownItems = [];
 let operatorDropdownIndex = -1;
 let acRegDropdownItems = [];
 let acRegDropdownIndex = -1;
+let sourceTypeDropdownItems = [];
+let sourceTypeDropdownIndex = -1;
 
 acRegInput.addEventListener('input', function () {
   updateQarFdrLabels(); // Always update label immediately
@@ -38,6 +44,190 @@ document.getElementById('htmlForm').addEventListener('keydown', function (e) {
   }
 });
 
+// --- Source Type Dropdown Logic ---
+function showSourceTypeDropdown() {
+  const reg = acRegInput.value.trim();
+  if (!reg || !aircraftData[reg]) return;
+
+  const availableSources = Object.keys(aircraftData[reg]);
+  if (availableSources.length === 0) return;
+
+  // only show when user focuses / clicks
+  sourceTypeDropdown.style.display = 'block';
+  positionSourceTypeDropdown();
+  filterSourceTypeDropdown();
+}
+
+
+function hideSourceTypeDropdown() {
+  setTimeout(() => {
+    sourceTypeDropdown.style.display = 'none';
+    sourceTypeDropdownIndex = -1;
+  }, 400);
+}
+
+function positionSourceTypeDropdown() {
+  sourceTypeDropdown.style.position = 'absolute';
+  sourceTypeDropdown.style.top =
+    sourceTypeInput.offsetTop + sourceTypeInput.offsetHeight + 'px';
+  sourceTypeDropdown.style.left = sourceTypeInput.offsetLeft + 'px';
+  sourceTypeDropdown.style.width = sourceTypeInput.offsetWidth + 'px';
+  sourceTypeDropdown.style.maxHeight = '150px';
+  sourceTypeDropdown.style.overflowY = 'auto';
+  sourceTypeDropdown.style.border = '1px solid #ccc';
+  sourceTypeDropdown.style.backgroundColor = '#fff';
+  sourceTypeDropdown.style.zIndex = 1000;
+}
+
+function filterSourceTypeDropdown() {
+  const filter = sourceTypeInput.value.toUpperCase();
+  sourceTypeDropdown.innerHTML = '';
+
+  const reg = acRegInput.value.trim();
+  if (!reg || !aircraftData[reg]) return;
+
+  let options = Object.keys(aircraftData[reg]);
+  options = options.filter(opt => opt.toUpperCase().includes(filter));
+
+  sourceTypeDropdownItems = [];
+  sourceTypeDropdownIndex = -1;
+
+  if (options.length === 0) {
+    const div = document.createElement('div');
+    div.textContent = 'No matches found';
+    div.style.color = '#999';
+    div.style.padding = '5px 10px';
+    sourceTypeDropdown.appendChild(div);
+  } else {
+    options.forEach((type, idx) => {
+      const div = createSourceTypeDropdownItem(type, idx);
+      sourceTypeDropdown.appendChild(div);
+      sourceTypeDropdownItems.push(div);
+    });
+  }
+}
+
+
+function createSourceTypeDropdownItem(type, idx) {
+  const div = document.createElement('div');
+  div.textContent = type;
+  div.style.padding = '5px 10px';
+  div.style.cursor = 'pointer';
+  div.onmouseenter = () => highlightSourceTypeItem(idx);
+  div.onmouseleave = () => unhighlightSourceTypeItem(idx);
+  div.onclick = () => selectSourceType(type);
+  return div;
+}
+
+function highlightSourceTypeItem(idx) {
+  if (sourceTypeDropdownItems[sourceTypeDropdownIndex]) {
+    sourceTypeDropdownItems[sourceTypeDropdownIndex].style.backgroundColor = '#fff';
+  }
+  sourceTypeDropdownIndex = idx;
+  sourceTypeDropdownItems[idx].style.backgroundColor = '#d0e7fa';
+}
+
+function unhighlightSourceTypeItem(idx) {
+  sourceTypeDropdownItems[idx].style.backgroundColor = '#fff';
+  sourceTypeDropdownIndex = -1;
+}
+
+function selectSourceType(type) {
+  sourceTypeInput.value = type;
+  sourceTypeDropdown.style.display = 'none';
+
+  // --- Update Upload & Label text dynamically ---
+  const uploadLabel = document.getElementById('uploadLabel');
+  const pnSnLabel = document.getElementById('pnSnLabel');
+
+  const upperType = type.toUpperCase();
+  if (upperType.includes('QAR')) {
+    uploadLabel.textContent = 'Upload QAR Data:';
+    pnSnLabel.textContent = 'QAR P/N–S/N:';
+  } else {
+    uploadLabel.textContent = 'Upload FDR Data:';
+    pnSnLabel.textContent = 'FDR P/N–S/N:'; // ✅ default fallback = FDR
+  }
+
+  handleSourceTypeSelection(); // ✅ Fill dependent fields
+}
+
+
+// --- Handle Source Type Selection ---
+function handleSourceTypeSelection() {
+  const reg = acRegInput.value.trim();
+  const type = sourceTypeInput.value.trim();
+
+  // Safety check
+  if (!reg || !type || !aircraftData[reg] || !aircraftData[reg][type]) {
+    console.warn('handleSourceTypeSelection: Missing or invalid reg/type', { reg, type });
+    return;
+  }
+
+  const data = aircraftData[reg][type];
+
+  // Debug log (optional)
+  console.log('[INFO] Populating fields for', reg, type, data);
+
+  // Fill fields
+  document.getElementById('typeOfAC').value = data['Aircraft type'] || data['Aircraft Type'] || '';
+  document.getElementById('fdrPnSn').value =
+    (data['Part Number'] || '') + ';' + (data['Serial Number'] || '');
+  document.getElementById('lflRefNo').value = data['LFL Reference No'] || data['LFL Refrence NO'] || '';
+  document.getElementById('noOfParametersRecorded').value =
+    data['No of Parameter recorded'] || data['No of Parameters recorded'] || '';
+  document.getElementById('noOfParametersSubmitted').value =
+    data['No of Parameter submitted for Evaluation'] || data['No of Parameters submitted for Evaluation'] || '';
+
+  // Update supporting fields
+  document.getElementById('natureOfReadout').value = 'Periodical';
+  document.getElementById('dataReceivedFrom').value = 'Operator';
+
+  // Show upload controls
+  fileContainer.style.display = 'block';
+  previewButton.style.display = 'block';
+}
+
+
+sourceTypeInput.addEventListener('focus', showSourceTypeDropdown);
+sourceTypeInput.addEventListener('blur', hideSourceTypeDropdown);
+sourceTypeInput.addEventListener('input', filterSourceTypeDropdown);
+
+sourceTypeInput.addEventListener('keydown', function (e) {
+  if (
+    sourceTypeDropdown.style.display !== 'block' ||
+    sourceTypeDropdownItems.length === 0
+  ) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (sourceTypeDropdownIndex < sourceTypeDropdownItems.length - 1) {
+      highlightSourceTypeItem(sourceTypeDropdownIndex + 1);
+      sourceTypeDropdownItems[sourceTypeDropdownIndex].scrollIntoView({
+        block: 'nearest',
+      });
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (sourceTypeDropdownIndex > 0) {
+      highlightSourceTypeItem(sourceTypeDropdownIndex - 1);
+      sourceTypeDropdownItems[sourceTypeDropdownIndex].scrollIntoView({
+        block: 'nearest',
+      });
+    }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (sourceTypeDropdownIndex > -1) {
+      sourceTypeDropdownItems[sourceTypeDropdownIndex].click();
+    } else if (sourceTypeDropdownItems.length === 1) {
+      sourceTypeDropdownItems[0].click();
+    }
+  } else if (e.key === 'Escape') {
+    sourceTypeDropdown.style.display = 'none';
+  }
+});
+
+
 // Load aircraft data and prepare Operator/Reg options
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -46,30 +236,35 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     const jsonData = await res.json();
     aircraftData = {};
+    const operatorSet = new Set();
 
     for (const acReg in jsonData) {
-      if (acReg) {
-        const entry = jsonData[acReg];
+      const regData = jsonData[acReg];
+      if (!regData) continue;
+
+      aircraftData[acReg] = {}; // ensure nested structure
+
+      for (const sourceType in regData) {
+        const entry = regData[sourceType];
+        if (!entry) continue;
+
         const cleanedEntry = {};
         for (const key in entry) {
           let value = entry[key];
-          if (typeof value === 'string') {
-            value = value.replace(/^,+|,+$/g, '').trim();
-          }
+          if (typeof value === 'string') value = value.trim();
           cleanedEntry[key] = value;
         }
-        aircraftData[acReg.replace(/^,+|,+$/g, '').trim()] = cleanedEntry;
+
+        // store cleaned entry
+        aircraftData[acReg][sourceType] = cleanedEntry;
+
+        // build operator list
+        if (cleanedEntry['Operator']) operatorSet.add(cleanedEntry['Operator']);
       }
     }
 
-    allAcRegOptions = Object.keys(aircraftData);
-    // Build unique operator list
-    const operatorSet = new Set();
-    for (const reg in aircraftData) {
-      const op = aircraftData[reg]['Operator'];
-      if (op) operatorSet.add(op);
-    }
-    allOperatorOptions = Array.from(operatorSet);
+    allAcRegOptions = Object.keys(aircraftData).sort();
+    allOperatorOptions = Array.from(operatorSet).sort();
 
     handleAcRegChange();
   } catch (error) {
@@ -250,12 +445,17 @@ function filterAcRegDropdown() {
   acRegDropdown.innerHTML = '';
 
   let filtered = allAcRegOptions;
+
   if (selectedOperator) {
-    filtered = filtered.filter(
-      (reg) => aircraftData[reg]['Operator'] === selectedOperator
-    );
+    filtered = filtered.filter(reg => {
+      const regData = aircraftData[reg];
+      return Object.values(regData).some(
+        src => src['Operator'] === selectedOperator
+      );
+    });
   }
-  filtered = filtered.filter((reg) => reg.toUpperCase().includes(filter));
+
+  filtered = filtered.filter(reg => reg.toUpperCase().includes(filter)).sort();
 
   acRegDropdownItems = [];
   acRegDropdownIndex = -1;
@@ -272,10 +472,13 @@ function filterAcRegDropdown() {
       acRegDropdown.appendChild(div);
       acRegDropdownItems.push(div);
     });
+
+    // 🟢 Auto-select if only one match
+    if (filtered.length === 1) {
+      selectAcReg(filtered[0]);
+    }
   }
 
-  // ✅ --- QAR/FDR Label Update (safe placement) ---
-  // ✅ Ensure labels always sync on input change
   updateQarFdrLabels();
 }
 
@@ -306,47 +509,45 @@ function unhighlightAcRegItem(idx) {
 function selectAcReg(reg) {
   acRegInput.value = reg;
 
-  // Fill all other fields based on this reg
-  const data = aircraftData[reg] || {};
-  document.getElementById('typeOfAC').value = data['Aircraft type'] || '';
-  document.getElementById('operator').value = data['Operator'] || '';
-  document.getElementById('fdrPnSn').value =
-    (data['Part Number'] || '') + ';' + (data['Serial Number'] || '');
-  document.getElementById('lflRefNo').value = data['LFL Refrence NO'] || '';
-  document.getElementById('noOfParametersRecorded').value =
-    data['No of Parameter recorded'] || '';
-  document.getElementById('noOfParametersSubmitted').value =
-    data['No of Parameter submitted for Evaluation'] || '';
+  const regData = aircraftData[reg];
+  if (!regData) return;
 
-  // Sync the operator
-  selectedOperator = data['Operator'] || '';
-  operatorInput.value = data['Operator'] || '';
+  // detect available source types
+  const availableSources = Object.keys(regData);
 
-  // Set Nature of Readout to Periodical
-  document.getElementById('natureOfReadout').value = 'Periodical';
+  // auto-fill operator (from first source type for display only)
+  const firstSource = regData[availableSources[0]];
+  operatorInput.value = firstSource['Operator'] || '';
+  selectedOperator = firstSource['Operator'] || '';
 
-  // Set Data Received From to Operator
-  document.getElementById('dataReceivedFrom').value = 'Operator';
+  // ❌ Do not auto-select source type
+  // ❌ Do not open dropdown automatically
+  // Instead, clear current source type input
+  sourceTypeInput.value = '';
+  sourceTypeDropdown.style.display = 'none';
 
+  // Let the user open dropdown manually later
   acRegDropdown.style.display = 'none';
   handleAcRegChange();
 }
 
 function updateQarFdrLabels() {
-  const acRegValue = (acRegInput.value || '').toUpperCase();
+  const typeValue = (sourceTypeInput.value || '').toUpperCase();
   const uploadLabel = document.getElementById('uploadLabel');
   const pnSnLabel = document.getElementById('pnSnLabel');
 
   if (!uploadLabel || !pnSnLabel) return;
 
-  if (acRegValue.includes('QAR')) {
+  if (typeValue.includes('QAR')) {
     uploadLabel.textContent = 'Upload QAR Data:';
-    pnSnLabel.textContent = 'QAR P/N-S/N:';
+    pnSnLabel.textContent = 'QAR P/N–S/N:';
   } else {
+    // ✅ Default & fallback → always FDR
     uploadLabel.textContent = 'Upload FDR Data:';
-    pnSnLabel.textContent = 'FDR P/N-S/N:';
+    pnSnLabel.textContent = 'FDR P/N–S/N:';
   }
 }
+
 
 
 acRegInput.addEventListener('input', filterAcRegDropdown);
@@ -397,6 +598,8 @@ function clearAircraftDetails() {
   document.getElementById('lflRefNo').value = '';
   document.getElementById('noOfParametersRecorded').value = '';
   document.getElementById('noOfParametersSubmitted').value = '';
+  sourceTypeInput.value = '';
+  document.getElementById('uploadLabel').textContent = 'Upload FDR Data:';
 }
 
 function hideSecondFormIfAllBlank() {
@@ -417,27 +620,20 @@ function hideSecondFormIfAllBlank() {
 // --- Update visibility based on A/C Reg input ---
 function handleAcRegChange() {
   const acRegValue = acRegInput.value.trim();
+  const sourceTypeValue = sourceTypeInput.value.trim();
 
-  // ✅ Ensure labels always sync on input change
   updateQarFdrLabels();
 
-  if (acRegValue && aircraftData[acRegValue]) {
-    // Valid A/C Reg and validate nature of readout and data received from
+  if (acRegValue && aircraftData[acRegValue] && (sourceTypeValue || Object.keys(aircraftData[acRegValue]).length === 1)) {
     document.getElementById('natureOfReadout').value = 'Periodical';
     document.getElementById('dataReceivedFrom').value = 'Operator';
     fileContainer.style.display = 'block';
   } else {
-    // Invalid or empty: clear all details!
-    operatorInput.value = '';
-    selectedOperator = '';
-    clearAircraftDetails();
-    document.getElementById('natureOfReadout').value = '';
-    document.getElementById('dataReceivedFrom').value = '';
     fileContainer.style.display = 'none';
     previewButton.style.display = 'none';
-    hideSecondFormIfAllBlank();
   }
 }
+
 
 // --- Upload and Preview Logic (Unchanged) ---
 fileInput.addEventListener('change', () => {
@@ -506,31 +702,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const formData = new FormData(this);
     const button = previewButton;
 
-    // 🟦 Add QAR/FDR recorder info
+    // #region Recorder Logic
+    // 🟦 Add QAR/FDR recorder info based on acReg value
     const acRegValue = (document.getElementById('acReg').value || '').toUpperCase();
     const recorder = acRegValue.includes('QAR') ? 'QAR' : 'FDR';
     formData.append('recorder', recorder);
+    // #endregion
 
+    // #region FDR Part Number / Serial Number
     // Add separate Part Number and Serial Number to formData
-    const fdrPnSn = document.getElementById('fdrPnSn').value;
+    const fdrPnSn = document.getElementById('fdrPnSn')?.value;
     if (fdrPnSn) {
       const parts = fdrPnSn.split(';');
       formData.append('partNumber', parts[0] || '');
       formData.append('serialNumber', parts[1] || '');
     }
+    // #endregion
 
-    // 🟨 Always log FormData contents
-    console.group('[INFO] Loaded operator info data');
+    // #region Source Type Logic
+    // Add the selected source type (e.g., QAR / FDR / DFDR etc.)
+    const sourceTypeElement = document.getElementById('sourceType');
+    if (sourceTypeElement) {
+      const sourceTypeValue = sourceTypeElement.value || '';
+      formData.append('sourceType', sourceTypeValue);
+    } else {
+      console.warn('[WARN] Source Type element not found');
+    }
+    // #endregion
+
+    // #region Debug Logging
+    console.group('[INFO] FormData contents');
     for (let [key, value] of formData.entries()) {
       console.log(`${key}:`, value);
     }
     console.groupEnd();
+    // #endregion
 
-    // 🟩 Button feedback
+    // #region Button Feedback
     button.disabled = true;
     button.style.backgroundColor = '#999';
     button.textContent = 'Generating...';
+    // #endregion
 
+    // #region Network Call
     try {
       const res = await fetch('/preview', {
         method: 'POST',
@@ -554,6 +768,8 @@ document.addEventListener('DOMContentLoaded', () => {
       button.style.backgroundColor = '#0073e6';
       button.textContent = 'Generate HTML Preview';
     }
+    // #endregion
   });
 });
+
 

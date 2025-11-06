@@ -191,14 +191,14 @@ router.post('/', upload.array('files'), async (req, res) => {
 
     // Step 7: Save manifest with base file names (no extension) sorted intelligently
     const uploadedBaseNames = Object.keys(filteredResults).map(
-      (name) => path.parse(name).name
+      (name) => path.parse(name).name.trim()
     );
 
-    // --- Logical numeric sort (for purely numbered filenames like 001A, 002, etc.) ---
-    function logicalSort(a, b) {
-      const extractParts = (filename) => {
-        const match = filename.match(/(\d+)([a-zA-Z]*)/);
-        return match ? [parseInt(match[1]), match[2] || ''] : [0, ''];
+    // --- Sort logic for "Group ..." names ---
+    function logicalGroupSort(a, b) {
+      const extractParts = (str) => {
+        const match = str.match(/(\d+)([a-zA-Z]*)$/);
+        return match ? [parseInt(match[1]), match[2].toLowerCase() || ""] : [0, ""];
       };
 
       const [numA, suffixA] = extractParts(a);
@@ -208,10 +208,10 @@ router.post('/', upload.array('files'), async (req, res) => {
       return suffixA.localeCompare(suffixB);
     }
 
-    // --- Alphabetical + numeric suffix sort (e.g. ENGINE PARAMETERS 1, ENGINE PARAMETERS 2) ---
+    // --- Sort logic for general text-based names ---
     function alphaNumericSort(a, b) {
       const extractAlphaNum = (str) => {
-        const match = str.match(/^(.*?)(\d+)?$/); // Split into prefix and optional trailing number
+        const match = str.match(/^(.*?)(\d+)?$/);
         return {
           prefix: match ? match[1].trim().toUpperCase() : str.toUpperCase(),
           number: match && match[2] ? parseInt(match[2]) : null,
@@ -232,23 +232,25 @@ router.post('/', upload.array('files'), async (req, res) => {
       return 0;
     }
 
-    // --- Decide which method to use ---
-    const allStartWithLetter = uploadedBaseNames.every((name) =>
-      /^[A-Za-z]/.test(name)
-    );
-
-    const sortedBaseNames = allStartWithLetter
-      ? uploadedBaseNames.sort(alphaNumericSort)
-      : uploadedBaseNames.sort(logicalSort);
+    // --- Decide which sorting method to apply ---
+    let sortedBaseNames;
+    if (uploadedBaseNames.every((name) => /^Group\s*\d/i.test(name))) {
+      // All names are "Group ..." style → use numeric+suffix sort
+      sortedBaseNames = uploadedBaseNames.sort(logicalGroupSort);
+    } else {
+      // Mixed or text-based → use alphabetical + numeric sort
+      sortedBaseNames = uploadedBaseNames.sort(alphaNumericSort);
+    }
 
     // --- Write manifest ---
-    const manifestPath = path.join(uploadsDir, 'manifest.json');
+    const manifestPath = path.join(uploadsDir, "manifest.json");
     try {
       fs.writeFileSync(manifestPath, JSON.stringify(sortedBaseNames, null, 2));
       console.log(`[INFO] Wrote manifest: ${manifestPath}`);
     } catch (err) {
       console.error(`[ERROR] Writing manifest file: ${manifestPath}`, err);
     }
+
   } // End of if files.length > 0
 
   // ---------- 2. CERTIFICATE PREVIEW GENERATION (from preview.js) ----------
@@ -418,8 +420,8 @@ router.post('/', upload.array('files'), async (req, res) => {
   console.log('[INFO] Loaded acRecord for', formData.acReg, ':', acRecord);
   console.log('[INFO] Loaded form data:', formData);
 
-  const partNumber = safeValue(acRecord['Part Number']);
-  const serialNumber = safeValue(acRecord['Serial Number']);
+  const partNumber = safeValue(formData.partNumber);
+  const serialNumber = safeValue(formData.serialNumber);
   const noOfParams = safeValue(
     acRecord['No of Parameter submitted for Evaluation']
   );

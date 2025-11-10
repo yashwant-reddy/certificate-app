@@ -182,33 +182,9 @@
     }
 
     @media print {
-
-      /* Print in Landscape format */
       @page {
         size: landscape;
-      }
-
-      /* Make the Table headers will never print at the bottom of a page; they will shift to the next page automatically. */
-      thead {
-        display: table-header-group;
-      }
-
-      tfoot {
-        display: table-footer-group;
-      }
-
-      table {
-        page-break-inside: auto;
-      }
-
-      tr,
-      th,
-      td {
-        page-break-inside: avoid !important;
-      }
-
-      tr {
-        page-break-after: auto;
+        margin: 1.5cm 1.5cm;
       }
 
       body {
@@ -218,33 +194,93 @@
         font-size: 9pt;
       }
 
-      .report-container {
-        padding: 0;
-        margin: 0;
-        page-break-inside: avoid;
+      thead {
+        display: table-header-group;
       }
 
-      .page-two-box {
-        padding: 10px 10px;
-        margin: 0 100px 0 100px;
+      tfoot {
+        display: table-footer-group;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        page-break-inside: auto;
+        margin: 0;
+        padding: 0;
+      }
+
+      tr,
+      td,
+      th {
+        page-break-inside: avoid !important;
+        page-break-after: auto;
+      }
+
+      .readout-header {
+        padding-top: 2px;
+        padding-bottom: 2px;
+        page-break-before: auto;
+        break-before: auto;
+        background-color: #d3d3d3;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .readout-header.force-page-break {
+        page-break-before: always !important;
+        break-before: always !important;
+      }
+
+      .readout-table,
+      .readout-row {
+        margin: 0;
+        padding: 0;
+      }
+
+      td,
+      th {
+        border: 1px solid #000;
+        padding: 4px;
+        text-align: center;
+        font-size: 8px;
+      }
+
+      th {
+        background-color: #d3d3d3;
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page-two-box,
+      #readout-container,
+      .readout-table {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
       }
 
       .no-print {
         display: none !important;
       }
 
-      table,
-      td {
+      .report-container {
+        padding: 0;
+        margin: 0;
+        page-break-inside: avoid;
+      }
+
+      .signature {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .remarks-row td,
+      .certification-row td {
+        text-align: left;
+        padding-left: 10px;
+        padding-right: 10px;
         font-size: 8px;
-      }
-
-      h1 {
-        font-size: 14px;
-      }
-
-      .section-title,
-      .section-value {
-        font-size: 9px;
       }
 
       .wrapper {
@@ -257,33 +293,9 @@
         width: 48%;
       }
 
-      .section-full {
-        width: 100%;
-      }
-
-      .certificate-row td {
-        text-align: center;
-      }
-
-      .remarks-row td,
-      .certification-row td {
-        text-align: left;
-        padding-left: 10px;
-        padding-right: 10px;
-        font-size: 8px;
-      }
-
-      .no-break {
-        page-break-inside: avoid !important;
-      }
-
-      #electron-search-bar {
-        display: none !important;
-      }
-
-      .signature {
-        break-inside: avoid;
-        page-break-inside: avoid;
+      .section-title,
+      .section-value {
+        font-size: 9px;
       }
     }
   </style>
@@ -332,7 +344,7 @@
             <div class="section-value" id="operator" contenteditable="true">{{operator}}</div>
           </div>
           <div class="section">
-            <div class="section-title" id="pnSnLabel" contenteditable="true">FDR P/N-S/N:</div>
+            <div class="section-title" id="pnSnLabel" contenteditable="true">{{SourceType}} P/N-S/N:</div>
             <div class="section-value" id="fdrPnSn" contenteditable="true">{{fdrPnSn}}</div>
           </div>
           <div class="section">
@@ -523,7 +535,7 @@
   <div class="page-break"></div>
 
   <div class="page-two-box">
-    <h5 class="heading-box">Parameter examination</h5>
+    <h5 class="heading-box" style="width: 87%;">Parameter examination</h5>
 
     <div class="key-section">
       <p><strong>Key:</strong></p>
@@ -548,25 +560,24 @@
     </div>
 
     <!-- Table -->
-    <table class="readout-table">
+    <table class="readout-table" style="width: 87%; border-collapse: collapse; table-layout: fixed;">
       <thead>
         <tr>
-          <th class="col-slno">SL NO</th>
-          <th class="col-paramName">PARAMETER NAME</th>
-          <th class="col-paramType">PARAMETER TYPE</th>
-          <th class="col-s">S</th>
-          <th class="col-ns">N/S</th>
-          <th class="col-nr">N/R</th>
-          <th class="col-us">U/S</th>
-          <th class="col-comments">COMMENTS</th>
+          <th class="col-slno" style="width:5%;">SL NO</th>
+          <th class="col-paramName" style="width:25%;">PARAMETER NAME</th>
+          <th class="col-paramType" style="width:14%;">PARAMETER TYPE</th>
+          <th class="col-s" style="width:6%;">S</th>
+          <th class="col-ns" style="width:6%;">N/S</th>
+          <th class="col-nr" style="width:6%;">N/R</th>
+          <th class="col-us" style="width:6%;">U/S</th>
+          <th class="col-comments" style="width:21%;">COMMENTS</th>
         </tr>
       </thead>
-
-      <!-- the read out table are rendred here -->
       <tbody>
         {{dynamicReadoutTables}}
       </tbody>
     </table>
+
 
     <br /><br />
     <div class="signature">
@@ -579,7 +590,7 @@
           2. Quality of recorded data (Frame count): Good
         </p>
         <p contenteditable="true">3. Validity of recorded parameters: Good</p>
-        <p contenteditable="true">4. Status of FDR unit: Serviceable</p>
+        <p contenteditable="true" id="sourceTypeComment">4. Status of {{SourceType}} unit: Serviceable</p>
 
         <br />
 
@@ -646,45 +657,46 @@
     document.head.appendChild(style);
 
     //WIP:add sroce option and based on that this should trigger 
-    document.addEventListener("DOMContentLoaded", function () {
-      const acRegElem = document.getElementById("acReg");
-      const pnSnLabelElem = document.getElementById("pnSnLabel");
-      const statusParagraphs = document.querySelectorAll(".signature p[contenteditable='true']");
+    // document.addEventListener("DOMContentLoaded", function () {
+    //   const acRegElem = document.getElementById("acReg");
+    //   const pnSnLabelElem = document.getElementById("pnSnLabel");
+    //   const statusParagraphs = document.querySelectorAll(".signature p[contenteditable='true']");
 
-      function updateForQAR() {
-        if (acRegElem && acRegElem.textContent.toUpperCase().includes("QAR")) {
-          // Update the label
-          if (pnSnLabelElem) {
-            pnSnLabelElem.textContent = "QAR P/N-S/N:";
-          }
+    //   function updateForQAR() {
+    //     if (acRegElem && acRegElem.textContent.toUpperCase().includes("QAR")) {
+    //       // Update the label
+    //       if (pnSnLabelElem) {
+    //         pnSnLabelElem.textContent = "QAR P/N-S/N:";
+    //       }
 
-          // Update "Status of FDR unit" to "Status of QAR unit"
-          statusParagraphs.forEach((p) => {
-            if (p.textContent.trim().startsWith("4. Status of FDR unit")) {
-              p.textContent = "4. Status of QAR unit: Serviceable";
-            }
-          });
-        } else {
-          // Reset to FDR if not QAR
-          if (pnSnLabelElem) {
-            pnSnLabelElem.textContent = "FDR P/N-S/N:";
-          }
-          statusParagraphs.forEach((p) => {
-            if (p.textContent.trim().startsWith("4. Status of QAR unit")) {
-              p.textContent = "4. Status of FDR unit: Serviceable";
-            }
-          });
-        }
-      }
+    //       // Update "Status of FDR unit" to "Status of QAR unit"
+    //       statusParagraphs.forEach((p) => {
+    //         if (p.textContent.trim().startsWith("4. Status of FDR unit")) {
+    //           p.textContent = "4. Status of QAR unit: Serviceable";
+    //         }
+    //       });
+    //     } else {
+    //       // Reset to FDR if not QAR
+    //       if (pnSnLabelElem) {
+    //         pnSnLabelElem.textContent = "FDR P/N-S/N:";
+    //       }
+    //       statusParagraphs.forEach((p) => {
+    //         if (p.textContent.trim().startsWith("4. Status of QAR unit")) {
+    //           p.textContent = "4. Status of FDR unit: Serviceable";
+    //         }
+    //       });
+    //     }
+    //   }
 
-      // Initial check on load
-      updateForQAR();
+    //   // Initial check on load
+    //   updateForQAR();
 
-      // Live update when user edits the A/C Reg field
-      if (acRegElem) {
-        acRegElem.addEventListener("input", updateForQAR);
-      }
-    });
+    //   // Live update when user edits the A/C Reg field
+    //   if (acRegElem) {
+    //     acRegElem.addEventListener("input", updateForQAR);
+    //   }
+    // });
+
 
     //search field
     if (window.electronAPI && window.electronAPI.onFind) {

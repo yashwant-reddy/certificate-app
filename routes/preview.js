@@ -394,7 +394,8 @@ router.post('/', upload.array('files'), async (req, res) => {
     .replace('{{currentDate}}', formattedDate)
     .replace('{{signature1}}', signature1URI)
     .replace('{{signature2}}', signature2URI)
-    .replace('{{logo}}', logoURI);
+    .replace('{{logo}}', logoURI)
+    .replace(/{{SourceType}}/g, formData.sourceType || 'FDR');
 
   const operatorInfoPath = path.join(
     __dirname,
@@ -416,15 +417,13 @@ router.post('/', upload.array('files'), async (req, res) => {
     );
   }
 
-  const acRecord = operatorData[formData.acReg] || {};
-  console.log('[INFO] Loaded acRecord for', formData.acReg, ':', acRecord);
+  // const acRecord = operatorData[formData.acReg] || {};
+  // console.log('[INFO] Loaded acRecord for', formData.acReg, ':', acRecord);
   console.log('[INFO] Loaded form data:', formData);
 
   const partNumber = safeValue(formData.partNumber);
   const serialNumber = safeValue(formData.serialNumber);
-  const noOfParams = safeValue(
-    acRecord['No of Parameter submitted for Evaluation']
-  );
+  const noOfParams = safeValue(formData.noOfParametersSubmitted);
 
   html = html
     .replace('{{partNumber}}', partNumber)
@@ -529,14 +528,14 @@ router.post('/', upload.array('files'), async (req, res) => {
 
         return `
         <tr class="readout-row">
-          <td class="col-slno">${sNumber++}</td>
-          <td class="col-paramName" contenteditable="true" style="text-align: left;">${cleanedKey}</td>
-          <td class="col-paramType" contenteditable="true">${parameterType}</td>
-          <td class="col-s" contenteditable="true">${isAllSame || usePattern ? '' : '✔'}</td>
-          <td class="col-ns" contenteditable="true">${isAllSame || usePattern ? '✔' : ''}</td>
-          <td class="col-nr" contenteditable="true"></td>
-          <td class="col-us" contenteditable="true"></td>
-          <td class="col-comments" contenteditable="true">${remark}</td>
+          <td class="col-slno" style="width:5%;">${sNumber++}</td>
+          <td class="col-paramName" contenteditable="true" style="text-align: left; width:25%;">${cleanedKey}</td>
+          <td class="col-paramType" contenteditable="true" style="width:14%;">${parameterType}</td>
+          <td class="col-s" contenteditable="true" style="width:6%;">${isAllSame || usePattern ? '' : '✔'}</td>
+          <td class="col-ns" contenteditable="true" style="width:6%;">${isAllSame || usePattern ? '✔' : ''}</td>
+          <td class="col-nr" contenteditable="true" style="width:6%;"></td>
+          <td class="col-us" contenteditable="true" style="width:6%;"></td>
+          <td class="col-comments" contenteditable="true" style="width:21%;">${remark}</td>
         </tr>
       `;
       })
@@ -544,7 +543,7 @@ router.post('/', upload.array('files'), async (req, res) => {
 
     dynamicReadoutTables += `
       <tr>
-        <td colspan="8" class="readout-header">${baseName}</td>
+        <td colspan="8" class="readout-header" style="width:100%;">${baseName}</td>
       </tr>
       ${tableRows}
     `;

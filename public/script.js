@@ -474,9 +474,9 @@ function filterAcRegDropdown() {
     });
 
     // 🟢 Auto-select if only one match
-    if (filtered.length === 1) {
-      selectAcReg(filtered[0]);
-    }
+    // if (filtered.length === 1) {
+    //   selectAcReg(filtered[0]);
+    // }
   }
 
   updateQarFdrLabels();

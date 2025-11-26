@@ -1,4 +1,4 @@
-// utils/certificateRefStore.js
+// utils/writeCertificateDetails.js
 const fs = require('fs');
 const path = require('path');
 const { stringify } = require('csv-stringify/sync');
@@ -27,6 +27,7 @@ const csvHeaders = [
   'lflRefNo',
   'noOfParametersRecorded',
   'noOfParametersSubmitted',
+  'machineInfo',
 ];
 
 // --- PATH DETECTION AND FALLBACK ---
@@ -148,6 +149,7 @@ function writeCertificateData(formData, refNoOverride) {
     formData.lflRefNo || '',
     formData.noOfParametersRecorded || '',
     formData.noOfParametersSubmitted || '',
+    formData.machineInfo || '',
   ];
 
   const csvRow = stringify([newRow]);

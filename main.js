@@ -4,6 +4,10 @@ if (process.argv.length > 1 && process.argv[1].endsWith('server.js')) {
   return; // Prevent Electron app logic!
 }
 
+const os = require('os');
+const networkInterfaces = os.networkInterfaces();
+
+
 const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron'); // globalShortcut removed
 const path = require('path');
 const childProcess = require('child_process');
@@ -39,7 +43,6 @@ ipcMain.handle('print-and-commit', async (event, formData) => {
 
   const refNo = getNextRefNumber();
 
-  // Inject number into DOM (if template defines window.__setCertificateRefNo)
   await win.webContents.executeJavaScript(
     `window.__setCertificateRefNo && window.__setCertificateRefNo(${refNo});`,
     true
@@ -50,8 +53,8 @@ ipcMain.handle('print-and-commit', async (event, formData) => {
     defaultPath: `Certificate_${refNo}.pdf`,
     filters: [{ name: 'PDF', extensions: ['pdf'] }],
   });
+
   if (canceled || !filePath) {
-    // Revert (optional)
     await win.webContents.executeJavaScript(
       `window.__setCertificateRefNo && window.__setCertificateRefNo(null);`,
       true
@@ -72,12 +75,28 @@ ipcMain.handle('print-and-commit', async (event, formData) => {
   console.log('[PRINT] filePath chosen =', filePath);
   console.log('[PRINT] Committing CSV…');
 
-  // Commit AFTER successful save
+  // user machine info
+  const hostname = os.hostname();
+  const machineIP = getLocalIPv4();
+  formData.machineInfo = `${hostname} | ${machineIP}`;
+
   const committedRef = writeCertificateData(formData, refNo);
   console.log('[PRINT] Committed CSV with refNo =', committedRef);
 
   return { ok: true, pdfPath: filePath, refNo: committedRef };
 });
+
+function getLocalIPv4() {
+  for (const iface of Object.values(os.networkInterfaces())) {
+    for (const config of iface) {
+      if (config.family === 'IPv4' && !config.internal) {
+        return config.address;
+      }
+    }
+  }
+  return 'unknown-ip';
+}
+
 
 // Find server.js for both dev and prod
 function getServerScript() {

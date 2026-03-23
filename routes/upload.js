@@ -85,7 +85,7 @@ router.post('/', upload.array('files'), async (req, res) => {
       if (allResults[fileName].length > 0) {
         firstObjects[fileName] = allResults[fileName][0];
       }
-      console.log(`✅ Keys in cleaned "${fileName}":`);
+      console.log(` Keys in cleaned "${fileName}":`);
       console.log(Object.keys(allResults[fileName][0]));
     }
   }
@@ -112,7 +112,7 @@ router.post('/', upload.array('files'), async (req, res) => {
   // REMOVE this line!
   // repeatingKeys.add(normalizedSubframeIndexKey); // Always remove Subframe Index
 
-  console.log('\n🚫 Keys to remove (normalized):');
+  console.log('\nKeys to remove (normalized):');
   console.log(Array.from(repeatingKeys));
 
   // Step 5: Filter rows

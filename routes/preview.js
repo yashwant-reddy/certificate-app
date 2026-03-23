@@ -33,343 +33,175 @@ const baseDir = process.cwd();
 const uploadsDir = path.join(baseDir, 'uploads');
 const dataDir = path.join(baseDir, 'data');
 
+// Ensure required directories exist
 try {
   fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log(`[INFO] Ensured uploads directory: ${uploadsDir}`);
-} catch (err) {
-  console.error('[ERROR] Creating uploads directory:', uploadsDir, err);
-}
+} catch (err) { console.error('[ERROR] Directory:', err); }
 try {
   fs.mkdirSync(dataDir, { recursive: true });
-  console.log(`[INFO] Ensured data directory: ${dataDir}`);
-} catch (err) {
-  console.error('[ERROR] Creating data directory:', dataDir, err);
-}
+} catch (err) { console.error('[ERROR] Directory:', err); }
 
-// Utility: Check if a filename (without extension) contains ONLY a standalone 1 (not 11, 12, etc)
 function isStandalone1File(filename) {
+  if (!filename) return false;
   const baseName = path.parse(filename).name;
   return /(^|[^\d])1(\D|$)/.test(baseName);
 }
 
 router.post('/', upload.array('files'), async (req, res) => {
-  // ---------- 1. FILE UPLOAD + CSV PROCESSING (from uploads.js) ----------
+  // ---------- 1. FILE UPLOAD + CSV PROCESSING ----------
   const files = req.files || [];
-  console.log(
-    `[INFO] Received files:`,
-    files.map((f) => f.originalname)
-  );
-
-  // If no files uploaded, continue (for "preview again" or template-only preview)
   const allResults = {};
   const firstObjects = {};
 
   if (files.length > 0) {
-    // Step 1: Parse all CSV files
     await Promise.all(
       files.map((file) => {
         return new Promise((resolve, reject) => {
           const results = [];
           const originalName = file.originalname;
-
           const filePath = file.path;
-          console.log(`[INFO] Reading uploaded CSV: ${filePath}`);
+
           fs.createReadStream(filePath)
             .pipe(csv())
             .on('data', (data) => results.push(data))
             .on('end', () => {
               allResults[originalName] = results;
-              if (results.length > 0) {
-                firstObjects[originalName] = results[0];
-              }
-              try {
-                fs.unlinkSync(filePath); // Clean up temp upload
-                console.log(`[INFO] Deleted temp uploaded file: ${filePath}`);
-              } catch (err) {
-                console.error('[ERROR] Deleting temp file:', filePath, err);
-              }
+              if (results.length > 0) firstObjects[originalName] = results[0];
+              try { fs.unlinkSync(filePath); } catch (err) { }
               resolve();
             })
-            .on('error', (err) => {
-              console.error(`[ERROR] Reading ${originalName}:`, err);
-              reject(err);
-            });
+            .on('error', reject);
         });
       })
     );
 
-    // Step 2: Clean up any file with a standalone '1' (not 11, 12, etc)
-    for (const fileName of Object.keys(allResults)) {
-      if (isStandalone1File(fileName)) {
-        console.log(`[INFO] Cleaning Subframe Index from: ${fileName}`);
-        allResults[fileName] = removeSubframeIndexFromReport1(
-          allResults[fileName]
-        );
-        if (allResults[fileName].length > 0) {
-          firstObjects[fileName] = allResults[fileName][0];
-        }
-        console.log(`✅ Keys in cleaned "${fileName}":`);
-        console.log(Object.keys(allResults[fileName][0]));
+    // Step 2: Natural Sort (1, 2, 4a, 4b, Alpha...)
+    const uploadedBaseNames = Object.keys(allResults).map(name => path.parse(name).name.trim());
+    function customSort(a, b) {
+      const groupRegex = /^Group\s*(\d+)([a-zA-Z]?)/i;
+
+      const aMatch = a.match(groupRegex);
+      const bMatch = b.match(groupRegex);
+
+      if (aMatch && bMatch) {
+        const numA = parseInt(aMatch[1]);
+        const numB = parseInt(bMatch[1]);
+
+        if (numA !== numB) return numA - numB;
+
+        return (aMatch[2] || '').localeCompare(bMatch[2] || '');
+      }
+
+      if (aMatch) return -1;
+      if (bMatch) return 1;
+
+      return a.localeCompare(b);
+    }
+
+    const sortedBaseNames = uploadedBaseNames.sort(customSort);
+
+    // Step 3: Identify Primary File
+    let primaryBaseName = sortedBaseNames.find(name => {
+      const originalFullName = Object.keys(allResults).find(fullName => path.parse(fullName).name.trim() === name);
+      return isStandalone1File(originalFullName);
+    }) || sortedBaseNames[0];
+
+    const masterKeyInAllResults = Object.keys(allResults).find(name => path.parse(name).name.trim() === primaryBaseName);
+
+    // Step 4: Master Cleaning
+    if (masterKeyInAllResults && allResults[masterKeyInAllResults]) {
+      allResults[masterKeyInAllResults] = removeSubframeIndexFromReport1(allResults[masterKeyInAllResults], masterKeyInAllResults);
+      if (allResults[masterKeyInAllResults].length > 0) {
+        firstObjects[masterKeyInAllResults] = allResults[masterKeyInAllResults][0];
       }
     }
 
-    // Normalize keys
+    // Step 5: Global Filtering & Redundancy Removal (FIXED)
     const normalizeKey = (key) => key.trim().toLowerCase();
-    const normalizedSubframeIndexKey = normalizeKey('Subframe Index');
+    const SUBFRAME_KEY = "subframe index";
 
-    // Step 3: Count key frequency across all first rows
-    const keyFrequency = {};
-    Object.values(firstObjects).forEach((obj) => {
-      Object.keys(obj).forEach((key) => {
-        const nKey = normalizeKey(key);
-        keyFrequency[nKey] = (keyFrequency[nKey] || 0) + 1;
-      });
-    });
-
-    // Step 4: Determine repeating keys
-    const repeatingKeys = new Set(
-      Object.entries(keyFrequency)
-        .filter(([_, count]) => count > 1)
-        .map(([key]) => key)
+    // Start with master keys
+    const globalSeenKeys = new Set(
+      Object.keys(firstObjects[masterKeyInAllResults] || {}).map(k => normalizeKey(k))
     );
 
-    // Step 5: Filter rows
     const filteredResults = {};
-    for (const [fileName, rows] of Object.entries(allResults)) {
-      if (isStandalone1File(fileName)) {
-        filteredResults[fileName] = rows;
-        console.log(
-          `📄 ${fileName}: no keys removed except 'Subframe Index' (by special rule)`
-        );
-      } else {
-        filteredResults[fileName] = rows.map((row) => {
-          const filtered = {};
-          for (const key in row) {
-            const trimmedKey = key.trim();
-            const nKey = normalizeKey(trimmedKey);
-            const shouldRemove = repeatingKeys.has(nKey);
-            if (!shouldRemove) {
-              filtered[trimmedKey] = row[key];
-            }
-          }
-          return filtered;
-        });
 
-        const originalKeys = new Set(rows.flatMap((r) => Object.keys(r)));
-        const removedKeys = [...originalKeys].filter((key) => {
+    for (const baseName of sortedBaseNames) {
+      const fileName = Object.keys(allResults).find(
+        name => path.parse(name).name.trim() === baseName
+      );
+
+      const rows = allResults[fileName];
+      const isMaster = (fileName === masterKeyInAllResults);
+
+      const removedKeysSet = new Set();
+
+      filteredResults[fileName] = rows.map((row) => {
+        const filtered = {};
+
+        for (const key in row) {
           const nKey = normalizeKey(key);
-          return repeatingKeys.has(nKey);
-        });
 
-        console.log(`📄 ${fileName}: removed keys ->`, removedKeys);
-      }
+          // RULE 1: remove Subframe Index everywhere
+          if (nKey === SUBFRAME_KEY) {
+            removedKeysSet.add(key);
+            continue;
+          }
+
+          // RULE 2: remove already seen keys
+          if (!isMaster && globalSeenKeys.has(nKey)) {
+            removedKeysSet.add(key);
+            continue;
+          }
+
+          filtered[key.trim()] = row[key];
+        }
+
+        return filtered;
+      });
+
+      // Log removed keys
+      console.log(` ${baseName}: removed keys ->`, [...removedKeysSet]);
+
+      // Add current file keys AFTER processing
+      const firstRow = filteredResults[fileName][0] || {};
+      Object.keys(firstRow).forEach(k => globalSeenKeys.add(normalizeKey(k)));
     }
 
-    // Step 6: Write JSON files with actual filenames
+    // Step 6: Write JSONs
     for (const [fileName, rows] of Object.entries(filteredResults)) {
       const baseName = path.parse(fileName).name;
-      const outputData = [
-        {
-          file: fileName,
-          [`${baseName} Content`]: rows,
-        },
-      ];
-
-      const outputFileName = `${baseName}.json`;
-      const outputPath = path.join(uploadsDir, outputFileName);
-
-      try {
-        fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
-        console.log(`[INFO] Wrote JSON output: ${outputPath}`);
-      } catch (err) {
-        console.error(
-          `[ERROR] Writing output for ${fileName} (${outputPath}):`,
-          err
-        );
-      }
+      fs.writeFileSync(path.join(uploadsDir, `${baseName}.json`), JSON.stringify([{ file: fileName, [`${baseName} Content`]: rows }], null, 2));
     }
 
-    // Step 7: Save manifest with base file names (no extension) sorted intelligently
-    const uploadedBaseNames = Object.keys(filteredResults).map(
-      (name) => path.parse(name).name.trim()
-    );
-
-    // --- Sort logic for "Group ..." names ---
-    function logicalGroupSort(a, b) {
-      const extractParts = (str) => {
-        const match = str.match(/(\d+)([a-zA-Z]*)$/);
-        return match ? [parseInt(match[1]), match[2].toLowerCase() || ""] : [0, ""];
-      };
-
-      const [numA, suffixA] = extractParts(a);
-      const [numB, suffixB] = extractParts(b);
-
-      if (numA !== numB) return numA - numB;
-      return suffixA.localeCompare(suffixB);
-    }
-
-    // --- Sort logic for general text-based names ---
-    function alphaNumericSort(a, b) {
-      const extractAlphaNum = (str) => {
-        const match = str.match(/^(.*?)(\d+)?$/);
-        return {
-          prefix: match ? match[1].trim().toUpperCase() : str.toUpperCase(),
-          number: match && match[2] ? parseInt(match[2]) : null,
-        };
-      };
-
-      const A = extractAlphaNum(a);
-      const B = extractAlphaNum(b);
-
-      // Compare alphabetically first
-      const prefixCompare = A.prefix.localeCompare(B.prefix);
-      if (prefixCompare !== 0) return prefixCompare;
-
-      // Then numerically if both have trailing numbers
-      if (A.number !== null && B.number !== null) return A.number - B.number;
-      if (A.number !== null) return 1; // Put numbered items after plain ones
-      if (B.number !== null) return -1;
-      return 0;
-    }
-
-    // --- Decide which sorting method to apply ---
-    let sortedBaseNames;
-    if (uploadedBaseNames.every((name) => /^Group\s*\d/i.test(name))) {
-      // All names are "Group ..." style → use numeric+suffix sort
-      sortedBaseNames = uploadedBaseNames.sort(logicalGroupSort);
-    } else {
-      // Mixed or text-based → use alphabetical + numeric sort
-      sortedBaseNames = uploadedBaseNames.sort(alphaNumericSort);
-    }
-
-    // --- Write manifest ---
-    const manifestPath = path.join(uploadsDir, "manifest.json");
-    try {
-      fs.writeFileSync(manifestPath, JSON.stringify(sortedBaseNames, null, 2));
-      console.log(`[INFO] Wrote manifest: ${manifestPath}`);
-    } catch (err) {
-      console.error(`[ERROR] Writing manifest file: ${manifestPath}`, err);
-    }
-
-  } // End of if files.length > 0
-
-  // ---------- 2. CERTIFICATE PREVIEW GENERATION (from preview.js) ----------
-
-  // Use req.body for form fields (multer populates req.body for non-files)
-  const date = new Date();
-  const currentYear = date.getFullYear();
-  const formattedDate = date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
-  const formData = {
-    workOrderNo: req.body.workOrderNo,
-    operator: req.body.operator,
-    acReg: req.body.acReg,
-    typeOfAC: req.body.typeOfAC,
-    dateOfDumping: req.body.dateOfDumping,
-    dataReceivedFrom: req.body.dataReceivedFrom,
-    fdrPnSn: req.body.fdrPnSn,
-    dateOfFlight: req.body.dateOfFlight,
-    flightSector: req.body.flightSector,
-    natureOfReadout: req.body.natureOfReadout,
-    lflRefNo: req.body.lflRefNo,
-    noOfParametersRecorded: req.body.noOfParametersRecorded,
-    noOfParametersSubmitted: req.body.noOfParametersSubmitted,
-    partNumber: req.body.partNumber,
-    serialNumber: req.body.serialNumber,
-    sourceType: req.body.sourceType,
-  };
-
-  let counterValue;
-  counterValue = getNextRefNumber();
-  // try {
-  //   counterValue = writeCertificateData(formData);
-  //   console.log('[INFO] Wrote certificate data for:', formData.acReg);
-  // } catch (err) {
-  //   console.error('[ERROR] Writing to CSV:', err.message);
-  //   return res
-  //     .status(500)
-  //     .send(
-  //       'The certificate data could not be saved. Please ensure the CSV file is not open.'
-  //     );
-  // }
-
-  const certificateRefNo = `${counterValue}/${currentYear}`;
-
-  const signature1Path = path.join(
-    __dirname,
-    '..',
-    'public',
-    'images',
-    'sasi-signature.png'
-  );
-  const signature2Path = path.join(
-    __dirname,
-    '..',
-    'public',
-    'images',
-    'achhuth-signature.png'
-  );
-  // Use this when the logo changes back to nest digital
-  // const logoPath = path.join(
-  //   __dirname,
-  //   '..',
-  //   'public',
-  //   'images',
-  //   'nestlogo.svg'
-  // );
-
-  const logoPath = path.join(
-    __dirname,
-    '..',
-    'public',
-    'images',
-    'NestLogo.png'
-  );
-
-  let signature1URI = '',
-    signature2URI = '',
-    logoURI = '';
-
-  try {
-    if (fs.existsSync(signature1Path)) {
-      signature1URI = `data:image/png;base64,${fs.readFileSync(signature1Path, 'base64')}`;
-      console.log('[INFO] Loaded:', signature1Path);
-    } else {
-      console.warn('[WARN] Signature 1 image not found:', signature1Path);
-    }
-    if (fs.existsSync(signature2Path)) {
-      signature2URI = `data:image/png;base64,${fs.readFileSync(signature2Path, 'base64')}`;
-      console.log('[INFO] Loaded:', signature2Path);
-    } else {
-      console.warn('[WARN] Signature 2 image not found:', signature2Path);
-    }
-    if (fs.existsSync(logoPath)) {
-      // use this for nest digital
-      // logoURI = `data:image/svg+xml;base64,${fs.readFileSync(logoPath, 'base64')}`;
-      logoURI = `data:image/png;base64,${fs.readFileSync(logoPath, 'base64')}`;
-      console.log('[INFO] Loaded:', logoPath);
-    } else {
-      console.warn('[WARN] Logo image not found:', logoPath);
-    }
-  } catch (err) {
-    console.error('[ERROR] Reading image files:', err);
+    // Step 7: Save Manifest
+    fs.writeFileSync(path.join(uploadsDir, "manifest.json"), JSON.stringify(sortedBaseNames, null, 2));
   }
 
-  const templatePath = path.join(__dirname, '..', 'templates', 'template.html');
+  // ---------- 2. CERTIFICATE PREVIEW GENERATION ----------
+  const date = new Date();
+  const formattedDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const formData = { ...req.body };
+  const certificateRefNo = `${getNextRefNumber()}/${date.getFullYear()}`;
+
+  // Image handling
+  const imgFolder = path.join(__dirname, '..', 'public', 'images');
+  const getBase64 = (p) => fs.existsSync(p) ? `data:image/png;base64,${fs.readFileSync(p, 'base64')}` : '';
+  const signature1 = getBase64(path.join(imgFolder, 'sasi-signature.png'));
+  const signature2 = getBase64(path.join(imgFolder, 'achhuth-signature.png'));
+  const logo = getBase64(path.join(imgFolder, 'NestLogo.png'));
+
+  // Template handling
   let html = '';
   try {
-    console.log('[INFO] Attempting to load template:', templatePath);
-    html = fs.readFileSync(templatePath, 'utf-8');
-    console.log('[INFO] Loaded template file.');
+    html = fs.readFileSync(path.join(__dirname, '..', 'templates', 'template.html'), 'utf-8');
   } catch (err) {
-    console.error('[ERROR] Reading template file:', templatePath, err);
+    console.error('[ERROR] Reading template:', err);
     return res.status(500).send('Template file missing or unreadable.');
   }
 
+  // Placeholders replacement
   html = html
     .replace('{{workOrderNo}}', formData.workOrderNo || 'Enter')
     .replace(/{{operator}}/g, formData.operator || 'Enter')
@@ -382,175 +214,78 @@ router.post('/', upload.array('files'), async (req, res) => {
     .replace('{{flightSector}}', formData.flightSector || 'Enter')
     .replace('{{natureOfReadout}}', formData.natureOfReadout || 'Enter')
     .replace('{{lflRefNo}}', formData.lflRefNo || 'Enter')
-    .replace(
-      '{{noOfParametersRecorded}}',
-      formData.noOfParametersRecorded || 'Enter'
-    )
-    .replace(
-      '{{noOfParametersSubmitted}}',
-      formData.noOfParametersSubmitted || 'Enter'
-    )
+    .replace('{{noOfParametersRecorded}}', formData.noOfParametersRecorded || 'Enter')
+    .replace('{{noOfParametersSubmitted}}', formData.noOfParametersSubmitted || 'Enter')
     .replace('{{certificateRefNo}}', certificateRefNo)
     .replace('{{currentDate}}', formattedDate)
-    .replace('{{signature1}}', signature1URI)
-    .replace('{{signature2}}', signature2URI)
-    .replace('{{logo}}', logoURI)
-    .replace(/{{SourceType}}/g, formData.sourceType || 'FDR');
+    .replace('{{signature1}}', signature1)
+    .replace('{{signature2}}', signature2)
+    .replace('{{logo}}', logo)
+    .replace(/{{SourceType}}/g, formData.sourceType || 'FDR')
+    .replace('{{partNumber}}', safeValue(formData.partNumber))
+    .replace('{{serialNumber}}', safeValue(formData.serialNumber))
+    .replace('{{noOfParams}}', safeValue(formData.noOfParametersSubmitted))
+    .replace('{{description}}', `${safeValue(formData.partNumber)} / ${safeValue(formData.serialNumber)}`);
 
-  const operatorInfoPath = path.join(
-    __dirname,
-    '..',
-    'data',
-    'Operator Info.json'
-  );
-  let operatorData = {};
-  try {
-    console.log('[INFO] Loading operator info data from:', operatorInfoPath);
-    const rawOperatorData = fs.readFileSync(operatorInfoPath, 'utf-8');
-    operatorData = JSON.parse(rawOperatorData);
-    console.log('[INFO] Loaded operator info data.');
-  } catch (error) {
-    console.error(
-      '[ERROR] Loading operator info data:',
-      operatorInfoPath,
-      error
-    );
-  }
-
-  // const acRecord = operatorData[formData.acReg] || {};
-  // console.log('[INFO] Loaded acRecord for', formData.acReg, ':', acRecord);
-  console.log('[INFO] Loaded form data:', formData);
-
-  const partNumber = safeValue(formData.partNumber);
-  const serialNumber = safeValue(formData.serialNumber);
-  const noOfParams = safeValue(formData.noOfParametersSubmitted);
-
-  html = html
-    .replace('{{partNumber}}', partNumber)
-    .replace('{{serialNumber}}', serialNumber)
-    .replace('{{noOfParams}}', noOfParams)
-    .replace('{{description}}', `${partNumber} / ${serialNumber}`);
-
-  let ReportSequenceArray = [];
-  try {
-    const manifestPath = path.join(uploadsDir, 'manifest.json');
-    console.log('[INFO] Looking for manifest:', manifestPath);
-    if (fs.existsSync(manifestPath)) {
-      ReportSequenceArray = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-      console.log('[INFO] Loaded manifest.json:', manifestPath);
-    } else {
-      console.warn('[WARN] No manifest.json found:', manifestPath);
-    }
-  } catch (err) {
-    console.error('[ERROR] Reading manifest.json:', err);
-  }
+  // Build Tables
+  let manifest = [];
+  try { manifest = JSON.parse(fs.readFileSync(path.join(uploadsDir, 'manifest.json'), 'utf-8')); } catch (e) { }
 
   let dynamicReadoutTables = '';
   let sNumber = 1;
 
-  for (const baseName of ReportSequenceArray) {
-    const jsonFileName = `${baseName}.json`;
-    const jsonPath = path.join(uploadsDir, jsonFileName);
+  for (const baseName of manifest) {
+    const jsonPath = path.join(uploadsDir, `${baseName}.json`);
+    if (!fs.existsSync(jsonPath)) continue;
 
-    if (!fs.existsSync(jsonPath)) {
-      console.warn(`[WARN] Skipped missing file: ${jsonFileName}`);
-      continue;
-    }
-
-    let reportData;
-    try {
-      reportData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-      console.log(`[INFO] Loaded report data for: ${jsonFileName}`);
-    } catch (err) {
-      console.error(`[ERROR] Parsing JSON for ${jsonFileName}:`, err);
-      continue;
-    }
-
-    const report = reportData.find((f) => f.file === `${baseName}.csv`);
-    if (!report) {
-      console.warn(`[WARN] No matching report entry for ${baseName}.csv`);
-      continue;
-    }
-
-    const content = report?.[`${baseName} Content`] || [];
-    if (content.length === 0) {
-      console.warn(`[WARN] No content found for ${baseName}`);
-      continue;
-    }
-
-    console.log(`[INFO] Processing report: ${baseName}.csv`);
+    const content = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'))[0][`${baseName} Content`] || [];
+    if (content.length === 0) continue;
 
     const rawKeys = Object.keys(content[0]);
     const cleanedKeys = cleanAndFilterAndFormatKeys(rawKeys);
 
-    const rowWiseFieldTypes = content.map((row, idx) => ({
-      rowIndex: idx,
-      fieldTypes: classifyFieldTypes(row),
-    }));
-
+    // Properly aggregate field types across all rows to support "Enter"
     const fieldTypeCounts = {};
-    for (const row of rowWiseFieldTypes) {
-      for (const [key, type] of Object.entries(row.fieldTypes)) {
-        if (!fieldTypeCounts[key]) {
-          fieldTypeCounts[key] = { Variable: 0, Discrete: 0, Enter: 0 };
-        }
+    content.forEach(row => {
+      const types = classifyFieldTypes(row);
+      Object.entries(types).forEach(([key, type]) => {
+        if (!fieldTypeCounts[key]) fieldTypeCounts[key] = { Variable: 0, Discrete: 0, Enter: 0 };
         fieldTypeCounts[key][type]++;
+      });
+    });
+
+    // Table Generation
+    const tableRows = rawKeys.map((rawKey, index) => {
+      const values = content.map(r => r[rawKey]);
+      const { isAllSame, sameValue } = isAllSameValue(values);
+      const { usePattern, patternValue } = checkSpecialPattern(values);
+
+      // Determine final parameter type: Variable, Discrete, or Enter
+      const counts = fieldTypeCounts[rawKey] || { Variable: 0, Discrete: 0, Enter: 0 };
+      let pType = 'Enter';
+      if (counts.Variable > 0) {
+        pType = 'Variable';
+      } else if (counts.Discrete > 0) {
+        pType = 'Discrete';
       }
-    }
 
-    const overallFieldTypes = {};
-    for (const [key, counts] of Object.entries(fieldTypeCounts)) {
-      overallFieldTypes[key] = {
-        type:
-          counts.Variable > 0
-            ? 'Variable'
-            : counts.Discrete > 0
-              ? 'Discrete'
-              : 'Enter',
-        count: counts,
-      };
-    }
-
-    const tableRows = rawKeys
-      .map((rawKey, index) => {
-        const cleanedKey = cleanedKeys[index];
-        const paramInfo = overallFieldTypes[rawKey] || {};
-        const parameterType = paramInfo.type || '';
-
-        const values = content.map((row) => row[rawKey]);
-        const { isAllSame, sameValue } = isAllSameValue(values);
-        const { usePattern, patternValue } = checkSpecialPattern(values);
-
-        const remark =
-          isAllSame || usePattern
-            ? `Always "${isAllSame ? sameValue : patternValue}"`
-            : '';
-
-        return `
+      return `
         <tr class="readout-row">
           <td class="col-slno" style="width:5%;">${sNumber++}</td>
-          <td class="col-paramName" contenteditable="true" style="text-align: left; width:25%;">${cleanedKey}</td>
-          <td class="col-paramType" contenteditable="true" style="width:14%;">${parameterType}</td>
+          <td class="col-paramName" contenteditable="true" style="text-align: left; width:25%;">${cleanedKeys[index]}</td>
+          <td class="col-paramType" contenteditable="true" style="width:14%;">${pType}</td>
           <td class="col-s" contenteditable="true" style="width:6%;">${isAllSame || usePattern ? '' : '✔'}</td>
           <td class="col-ns" contenteditable="true" style="width:6%;">${isAllSame || usePattern ? '✔' : ''}</td>
           <td class="col-nr" contenteditable="true" style="width:6%;"></td>
           <td class="col-us" contenteditable="true" style="width:6%;"></td>
-          <td class="col-comments" contenteditable="true" style="width:21%;">${remark}</td>
-        </tr>
-      `;
-      })
-      .join('');
+          <td class="col-comments" contenteditable="true" style="width:21%;">${isAllSame || usePattern ? `Always "${isAllSame ? sameValue : patternValue}"` : ''}</td>
+        </tr>`;
+    }).join('');
 
-    dynamicReadoutTables += `
-      <tr>
-        <td colspan="8" class="readout-header" style="width:100%;">${baseName}</td>
-      </tr>
-      ${tableRows}
-    `;
+    dynamicReadoutTables += `<tr><td colspan="8" class="readout-header" style="width:100%;">${baseName}</td></tr>${tableRows}`;
   }
 
   html = html.replace('{{dynamicReadoutTables}}', dynamicReadoutTables);
-
   res.send(html);
 });
 

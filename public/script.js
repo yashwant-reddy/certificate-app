@@ -694,6 +694,19 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('[ERROR] Form element with id="htmlForm" not found!');
     return;
   }
+  
+  const dateConfig = {
+    dateFormat: "d.m.Y",
+    allowInput: true,
+    altInput: false, // Using direct input for your custom format
+  };
+
+  const dumpPicker = flatpickr("#dateOfDumping", dateConfig);
+  const flightPicker = flatpickr("#dateOfFlight", dateConfig);
+
+  // Icon triggers
+  document.getElementById("icon-dumping").addEventListener("click", () => dumpPicker.open());
+  document.getElementById("icon-flight").addEventListener("click", () => flightPicker.open());
 
   form.addEventListener('submit', async function (e) {
     e.preventDefault();

@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Flight Report Preview</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
     /* Base style */
     body {
@@ -19,6 +20,73 @@
       color: #333;
       font-size: 14px;
       margin-bottom: 10px;
+    }
+
+    /* button styles  */
+
+    /* ===== ACTION BUTTONS (PRINT + EXPORT) ===== */
+    .action-buttons {
+      position: fixed;
+      top: 15px;
+      left: 20px;
+      display: grid;
+      gap: 10px;
+      z-index: 999;
+    }
+
+    .action-btn {
+      background-color: #333;
+      color: #fff;
+      border: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      cursor: pointer;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .action-btn i {
+      font-size: 16px;
+    }
+
+    /* Hover effect */
+    .action-btn:hover {
+      background-color: #555;
+      transform: scale(1.1);
+    }
+
+    /* Click effect */
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Tooltip (custom, better than title) */
+    .action-btn::after {
+      content: attr(title);
+      position: absolute;
+      top: 48px;
+      background: #000;
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+
+      opacity: 0;
+      transform: translateY(-5px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .action-btn:hover::after {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     /* Page 1 Start */
@@ -302,6 +370,15 @@
 </head>
 
 <body>
+  <div class="no-print action-buttons">
+    <button class="action-btn" onclick="printReport()" title="Print">
+      <i class="fa-solid fa-print"></i>
+    </button>
+
+    <button class="action-btn" onclick="exportHTML()" title="Export">
+      <i class="fa-solid fa-file-export"></i>
+    </button>
+  </div>
   <div class="report-border">
     <h1>Flight Data Recorder Readout Analysis Report</h1>
 
@@ -697,8 +774,90 @@
     //   }
     // });
 
+    // button functions
+    // ===== DATE FORMAT =====
+    function formatDateDDMMYYYY(date = new Date()) {
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yyyy = date.getFullYear();
+      return `${dd}${mm}${yyyy}`;
+    }
 
-    //search field
+    // ===== NORMALIZE INPUT DATE =====
+    function normalizeDate(input) {
+      if (!input) return null;
+
+      input = input.trim();
+
+      // Already DDMMYYYY
+      if (/^\d{8}$/.test(input)) return input;
+
+      // Support / - .
+      const parts = input.split(/[\/\-.]/);
+
+      if (parts.length === 3 && parts.every(p => p)) {
+        let [dd, mm, yyyy] = parts;
+
+        if (yyyy.length === 2) yyyy = '20' + yyyy;
+
+        return `${dd.padStart(2, '0')}${mm.padStart(2, '0')}${yyyy}`;
+      }
+
+      // Try parsing fallback
+      const d = new Date(input);
+      if (!isNaN(d)) return formatDateDDMMYYYY(d);
+
+      return null;
+    }
+
+    // ===== PRINT FUNCTION =====
+    function printReport() {
+      window.print();
+    }
+
+    // ===== EXPORT FUNCTION =====
+    function exportHTML() {
+      const docClone = document.documentElement.cloneNode(true);
+
+      // Remove UI elements
+      docClone.querySelectorAll('.no-print').forEach(el => el.remove());
+
+      // Get acReg from LIVE DOM
+      let acReg = document.getElementById("acReg")?.innerText?.trim();
+
+      if (!acReg || acReg.includes("{{")) {
+        acReg = "NA";
+      }
+
+      // 👉 ALSO update inside CLONE (IMPORTANT)
+      const cloneAcReg = docClone.querySelector("#acReg");
+      if (cloneAcReg) {
+        cloneAcReg.innerText = acReg;
+      }
+
+      // Clean filename
+      acReg = acReg.replace(/[\\/:*?"<>|]/g, '_');
+
+      // Date
+      const rawDate = document.getElementById("dateOfDumping")?.innerText;
+      const formattedDate = normalizeDate(rawDate) || formatDateDDMMYYYY();
+
+      const finalHTML = "<!DOCTYPE html>\n" + docClone.outerHTML;
+
+      const blob = new Blob([finalHTML], { type: "text/html" });
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+
+      link.download = `${acReg}${formattedDate}.html`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+
+    //search field functions 
     if (window.electronAPI && window.electronAPI.onFind) {
       window.electronAPI.onFind(() => {
         if (document.getElementById('electron-search-bar')) {
@@ -870,6 +1029,9 @@
         setTimeout(() => input.focus(), 0);
       });
     }
+
+    window.exportHTML = exportHTML;
+    window.printReport = printReport;
   </script>
 
 </body>

@@ -48,7 +48,10 @@ contextBridge.exposeInMainWorld('printAPI', {
 
   // Manually request print+commit with arbitrary formData
   printAndCommit: async (formData) => {
-    const payload = formData ?? collectFormDataFromDOM();
+    const payload = {
+      ...collectFormDataFromDOM(), // always include DOM data
+      ...(formData || {})          // override/add extras like fileName
+    };
     console.log('[PRELOAD] printAPI.printAndCommit invoked with:', payload);
     try {
       const res = await ipcRenderer.invoke('print-and-commit', payload);

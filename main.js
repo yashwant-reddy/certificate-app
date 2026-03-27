@@ -83,6 +83,13 @@ ipcMain.handle('print-and-commit', async (event, formData) => {
   const committedRef = writeCertificateData(formData, refNo);
   console.log('[PRINT] Committed CSV with refNo =', committedRef);
 
+  // ===== SAVE HTML =====
+  if (formData.htmlContent && filePath) {
+    const htmlPath = filePath.replace(/\.pdf$/i, '.html');
+    fs.writeFileSync(htmlPath, formData.htmlContent, 'utf-8');
+    console.log('[PRINT] HTML saved at =', htmlPath);
+  }
+
   return { ok: true, pdfPath: filePath, refNo: committedRef };
 });
 

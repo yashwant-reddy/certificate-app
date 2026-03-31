@@ -16,6 +16,10 @@ const sourceTypeInput = document.getElementById('sourceTypeInput');
 const sourceTypeDropdown = document.getElementById('sourceTypeDropdown');
 const uploadLabel = document.getElementById('uploadLabel');
 
+const hiddenDateInput = document.getElementById("hiddenWorkOrderDate");
+const displayInput = document.getElementById("workOrderNo");
+const icon = document.getElementById("icon-workorder");
+
 
 fileContainer.style.display = 'none';
 previewButton.style.display = 'none';
@@ -31,6 +35,32 @@ acRegInput.addEventListener('input', function () {
   updateQarFdrLabels(); // Always update label immediately
 });
 
+// Open calendar when clicking input or icon
+displayInput.addEventListener("click", () => hiddenDateInput.showPicker());
+icon.addEventListener("click", () => hiddenDateInput.showPicker());
+
+// Format date on selection
+hiddenDateInput.addEventListener("change", () => {
+  const date = new Date(hiddenDateInput.value);
+
+  const formatted = date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  });
+
+  displayInput.value = `E-mail dated : ${formatted}`;
+});
+
+// The logic remains the same, but the CSS now controls the "pop" location
+const triggerPicker = () => {
+  if (hiddenDateInput.showPicker) {
+    hiddenDateInput.showPicker();
+  } else {
+    // Fallback for older browsers
+    hiddenDateInput.focus();
+  }
+};
 
 // Prevent form submission when pressing Enter in any input
 document.getElementById('htmlForm').addEventListener('keydown', function (e) {
@@ -694,7 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('[ERROR] Form element with id="htmlForm" not found!');
     return;
   }
-  
+
   const dateConfig = {
     dateFormat: "d.m.Y",
     allowInput: true,

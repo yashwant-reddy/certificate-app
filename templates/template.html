@@ -179,7 +179,7 @@
 
     .logo-left img,
     .logo-right img {
-      width: 40%;
+      width: 60%;
     }
 
     .certificate-row td {
@@ -495,14 +495,14 @@
             <td class="logo-left" colspan="2" style="text-align: center; vertical-align: middle; padding: 10px 0;">
               <div style="display: inline-block; text-align: center;">
                 <img src="{{logo}}" alt="Nest Logo" style="
-        max-width: 20%;
+        max-width: 60%;
         width: 100%;
         height: auto;
         object-fit: contain;
         display: block;
         margin: 0 auto 6px auto;
       " />
-                <div style="font-size: 12px;">SFO Technologies Pvt Ltd</div>
+        
               </div>
             </td>
 
@@ -513,7 +513,7 @@
             <!-- Center Address -->
             <td colspan="2" style="text-align: center; vertical-align: middle;">
               <div style="display: inline-block; text-align: left;">
-                <div><strong>SFO Technologies Pvt Ltd</strong></div>
+                <div><strong>Nest Digital Pvt Ltd</strong></div>
                 <div>Crescent 4, Prestige Shantiniketan,</div>
                 <div>Whitefield Road, Bengaluru,</div>
                 <div>Karnataka 560048</div>
@@ -528,7 +528,7 @@
             border: 1px solid black;
             padding: 8px;
           " contenteditable="true">
-                SFO/QM/FORM NO: 004<br />
+                NDPL/QM/FORM NO: 004<br />
                 ISSUE NO: 2<br />
                 REVISION NO: 4<br />
                 DATE OF ISSUE: SEP 19
@@ -706,7 +706,7 @@
         ">
         <div style="text-align: center; width: 48%">
           <p><strong>Readout report done by:</strong></p>
-          <img src="{{signature2}}" alt="achhuth signature" />
+          <img src="{{signature2}}" alt="achhuth signature" style="width: 14%"/>
           <div>
             <p>Achhuth Reddy H M</p>
             <p>Flight Data Analyst</p>
@@ -726,15 +726,7 @@
       </div>
     </div>
   </div>
-  <!-- Optional reminder for user before print -->
-  <!-- <div class="no-print" style="margin: 30px; font-size: 0.9rem; color: #333">
-    <strong>Before printing:</strong>
-    <ul>
-      <li>Uncheck "Headers and footers" in the print dialog</li>
-      <li>Enable "Background graphics" for logo and color display</li>
-      <li>Only page numbers will appear at the footer</li>
-    </ul>
-  </div> -->
+
 
   <script>
 
@@ -743,47 +735,7 @@
     style.textContent = '@media print { #electron-search-bar { display: none !important; } }';
     document.head.appendChild(style);
 
-    //WIP:add sroce option and based on that this should trigger 
-    // document.addEventListener("DOMContentLoaded", function () {
-    //   const acRegElem = document.getElementById("acReg");
-    //   const pnSnLabelElem = document.getElementById("pnSnLabel");
-    //   const statusParagraphs = document.querySelectorAll(".signature p[contenteditable='true']");
-
-    //   function updateForQAR() {
-    //     if (acRegElem && acRegElem.textContent.toUpperCase().includes("QAR")) {
-    //       // Update the label
-    //       if (pnSnLabelElem) {
-    //         pnSnLabelElem.textContent = "QAR P/N-S/N:";
-    //       }
-
-    //       // Update "Status of FDR unit" to "Status of QAR unit"
-    //       statusParagraphs.forEach((p) => {
-    //         if (p.textContent.trim().startsWith("4. Status of FDR unit")) {
-    //           p.textContent = "4. Status of QAR unit: Serviceable";
-    //         }
-    //       });
-    //     } else {
-    //       // Reset to FDR if not QAR
-    //       if (pnSnLabelElem) {
-    //         pnSnLabelElem.textContent = "FDR P/N-S/N:";
-    //       }
-    //       statusParagraphs.forEach((p) => {
-    //         if (p.textContent.trim().startsWith("4. Status of QAR unit")) {
-    //           p.textContent = "4. Status of FDR unit: Serviceable";
-    //         }
-    //       });
-    //     }
-    //   }
-
-    //   // Initial check on load
-    //   updateForQAR();
-
-    //   // Live update when user edits the A/C Reg field
-    //   if (acRegElem) {
-    //     acRegElem.addEventListener("input", updateForQAR);
-    //   }
-    // });
-
+  
     // button functions
     // ===== DATE FORMAT =====
     function formatDateDDMMYYYY(date = new Date()) {

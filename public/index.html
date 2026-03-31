@@ -106,8 +106,24 @@
         <label for="natureOfReadout">Nature of Readout:</label>
         <input type="text" id="natureOfReadout" name="natureOfReadout" />
 
-        <label for="workOrderNo">Work Order No:</label>
-        <input type="text" id="workOrderNo" name="workOrderNo" />
+        <div>
+          <label for="workOrderNo">Work Order No:</label>
+          <div class="input-icon-wrap">
+            <input type="text" id="workOrderNo" name="workOrderNo" placeholder="E-mail dated : dd Month yyyy"
+              readonly />
+
+            <input type="date" id="hiddenWorkOrderDate"
+              style="position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none;">
+
+            <svg class="calendar-icon" id="icon-workorder" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+        </div>
 
         <label for="lflRefNo">LFL Ref No:</label>
         <input type="text" id="lflRefNo" name="lflRefNo" />

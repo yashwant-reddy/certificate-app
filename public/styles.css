@@ -1,10 +1,13 @@
 /* --- CSS Variables for Easy Theming --- */
 :root {
-  --primary: #2563eb;        /* Modern vibrant blue */
+  --primary: #2563eb;
+  /* Modern vibrant blue */
   --primary-hover: #1d4ed8;
-  --bg-body: #f8fafc;        /* Soft slate background */
+  --bg-body: #f8fafc;
+  /* Soft slate background */
   --bg-surface: #ffffff;
-  --text-main: #0f172a;      /* Dark slate for high contrast readability */
+  --text-main: #0f172a;
+  /* Dark slate for high contrast readability */
   --text-muted: #64748b;
   --border-color: #cbd5e1;
   --border-focus: #93c5fd;
@@ -18,7 +21,9 @@
 }
 
 /* --- Base Resets & Body --- */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -72,7 +77,7 @@ label {
 }
 
 /* Remove top margin for the very first label */
-form > div:first-child label {
+form>div:first-child label {
   margin-top: 0;
 }
 
@@ -111,16 +116,19 @@ select:focus {
 .form-row {
   display: flex;
   gap: 1rem;
-  align-items: flex-end; /* Aligns inputs nicely if labels are different heights */
+  align-items: flex-end;
+  /* Aligns inputs nicely if labels are different heights */
   margin-top: 1.25rem;
 }
 
-.form-row > div {
-  flex: 1; /* Allows columns to grow equally unless constrained by inline styles */
+.form-row>div {
+  flex: 1;
+  /* Allows columns to grow equally unless constrained by inline styles */
 }
 
 .form-row label {
-  margin-top: 0; /* Handled by row spacing */
+  margin-top: 0;
+  /* Handled by row spacing */
 }
 
 /* date styles */
@@ -135,9 +143,24 @@ select:focus {
   align-items: center;
 }
 
+#hiddenWorkOrderDate {
+  position: absolute;
+  bottom: 0;
+  /* Anchor to the bottom */
+  left: 0;
+  width: 100%;
+  /* Match the width of the box */
+  height: 1px;
+  /* Keep it paper-thin */
+  opacity: 0;
+  /* Keep it invisible */
+  pointer-events: none;
+  /* Let clicks pass through to your JS listeners */
+}
+
 /* Add padding to the right so the text doesn't type over the icon */
 .input-icon-wrap input {
-  padding-right: 2.5rem; 
+  padding-right: 2.5rem;
 }
 
 .calendar-icon {
@@ -258,9 +281,12 @@ ul#file-list li {
     flex-direction: column;
     gap: 0;
   }
-  .form-row > div {
-    width: 100% !important; /* Overrides the inline 60% on mobile for better stacking */
+
+  .form-row>div {
+    width: 100% !important;
+    /* Overrides the inline 60% on mobile for better stacking */
   }
+
   form {
     padding: 1.5rem;
   }

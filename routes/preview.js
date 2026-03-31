@@ -189,8 +189,26 @@ router.post('/', upload.array('files'), async (req, res) => {
   const imgFolder = path.join(__dirname, '..', 'public', 'images');
   const getBase64 = (p) => fs.existsSync(p) ? `data:image/png;base64,${fs.readFileSync(p, 'base64')}` : '';
   const signature1 = getBase64(path.join(imgFolder, 'sasi-signature.png'));
-  const signature2 = getBase64(path.join(imgFolder, 'achhuth-signature.png'));
-  const logo = getBase64(path.join(imgFolder, 'NestLogo.png'));
+  const signature2 = getBase64(path.join(imgFolder, 'achuth.png'));
+  // const logo = getBase64(path.join(imgFolder, 'NestLogo.png'));
+  // Use this when the logo changes back to nest digital
+  function getLogo(filePath) {
+    if (!fs.existsSync(filePath)) return '';
+
+    const ext = path.extname(filePath).toLowerCase();
+
+    // 🔥 FORCE base64 for SVG (like your old PNG logic)
+    if (ext === '.svg') {
+      const svg = fs.readFileSync(filePath, 'utf8');
+
+      return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+    }
+
+    // PNG / JPG (unchanged)
+    return `data:image/${ext.replace('.', '')};base64,${fs.readFileSync(filePath, 'base64')}`;
+  }
+  const logo = getLogo(path.join(imgFolder, 'nestlogo.svg'));
+  console.log('LOGO:', logo.substring(0, 100));
 
   // Template handling
   let html = '';

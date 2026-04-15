@@ -78,24 +78,39 @@ router.post('/', upload.array('files'), async (req, res) => {
     // Step 2: Natural Sort (1, 2, 4a, 4b, Alpha...)
     const uploadedBaseNames = Object.keys(allResults).map(name => path.parse(name).name.trim());
     function customSort(a, b) {
-      const groupRegex = /^Group\s*(\d+)([a-zA-Z]?)/i;
+      function extractParts(str) {
+        const match = str.match(/^(.*?)(\d+)([a-zA-Z]*)$/);
 
-      const aMatch = a.match(groupRegex);
-      const bMatch = b.match(groupRegex);
+        if (!match) {
+          return {
+            prefix: str.trim().toLowerCase(),
+            number: Number.MAX_SAFE_INTEGER,
+            suffix: ''
+          };
+        }
 
-      if (aMatch && bMatch) {
-        const numA = parseInt(aMatch[1]);
-        const numB = parseInt(bMatch[1]);
-
-        if (numA !== numB) return numA - numB;
-
-        return (aMatch[2] || '').localeCompare(bMatch[2] || '');
+        return {
+          prefix: match[1].trim().toLowerCase(),
+          number: parseInt(match[2], 10),
+          suffix: match[3].toLowerCase()
+        };
       }
 
-      if (aMatch) return -1;
-      if (bMatch) return 1;
+      const A = extractParts(a);
+      const B = extractParts(b);
 
-      return a.localeCompare(b);
+      // 1️⃣ Prefix compare (Engine, General, Readout…)
+      if (A.prefix !== B.prefix) {
+        return A.prefix.localeCompare(B.prefix);
+      }
+
+      // 2️⃣ Number compare (1,2,3…10…)
+      if (A.number !== B.number) {
+        return A.number - B.number;
+      }
+
+      // 3️⃣ Suffix compare (a, b…)
+      return A.suffix.localeCompare(B.suffix);
     }
 
     const sortedBaseNames = uploadedBaseNames.sort(customSort);

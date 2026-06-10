@@ -304,7 +304,7 @@ router.post('/', upload.array('files'), async (req, res) => {
 
       return `
         <tr class="readout-row">
-          <td class="col-slno" style="width:5%;">${sNumber++}</td>
+          <td class="col-slno" contenteditable="true" style="width:5%;">${sNumber++}</td>
           <td class="col-paramName" contenteditable="true" style="text-align: left; width:25%;">${cleanedKeys[index]}</td>
           <td class="col-paramType" contenteditable="true" style="width:14%;">${pType}</td>
           <td class="col-s" contenteditable="true" style="width:6%;">${isAllSame || usePattern ? '' : '✔'}</td>
